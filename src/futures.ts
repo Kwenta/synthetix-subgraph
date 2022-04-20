@@ -94,6 +94,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     tradeEntity.size = event.params.tradeSize;
     tradeEntity.positionSize = event.params.size;
     tradeEntity.price = event.params.lastPrice;
+    tradeEntity.positionId = positionId;
     if (marketEntity && marketEntity.asset) {
       tradeEntity.asset = marketEntity.asset;
     }
