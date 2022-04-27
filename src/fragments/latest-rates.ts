@@ -95,7 +95,7 @@ function updateCandle(timestamp: BigInt, lastUpdateTimestamp: BigInt, synth: str
           newCandle.close = prevCandle.close;
           newCandle.average = prevCandle.close;
           newCandle.period = period;
-          newCandle.timestamp = timestamp.minus(timestamp.mod(period)); // store the beginning of this period, rather than the timestamp of the first rate update.
+          newCandle.timestamp = newPeriodId.times(period); // store the beginning of this period, rather than the timestamp of the first rate update.
           newCandle.aggregatedPrices = BigInt.fromI32(0);
 
           newCandle.open = prevCandle.close;
