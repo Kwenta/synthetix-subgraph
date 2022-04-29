@@ -114,6 +114,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     tradeEntity.positionId = positionId;
     tradeEntity.price = event.params.lastPrice;
     tradeEntity.feesPaid = event.params.fee;
+    tradeEntity.orderType = 'Market';
 
     if (marketEntity && marketEntity.asset) {
       tradeEntity.asset = marketEntity.asset;
