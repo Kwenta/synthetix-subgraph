@@ -106,7 +106,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
   }
 
   if (event.params.tradeSize.isZero() == false) {
-    let tradeEntity = new FuturesTrade(event.transaction.hash.toHex() + '-' + event.logIndex.toString());
+    let tradeEntity = new FuturesTrade(event.transaction.hash.toHex() + '-' + event.transactionLogIndex.toString());
     tradeEntity.timestamp = event.block.timestamp;
     tradeEntity.account = event.params.account;
     tradeEntity.size = event.params.tradeSize;
