@@ -392,6 +392,11 @@ export function handleNextPriceOrderRemoved(event: NextPriceOrderRemovedEvent): 
       // TODO: check whether the order was filled/cancelled
       futuresOrderEntity.status = 'Filled';
       futuresOrderEntity.save();
+
+      let tradeEntity = FuturesTrade.load(event.transaction.hash.toHex() + '-' + event.transactionLogIndex.toString());
+      if (tradeEntity) {
+        tradeEntity.orderType = 'NextPrice';
+      }
     }
   }
 }
