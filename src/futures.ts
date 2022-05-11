@@ -29,24 +29,6 @@ let ETHER = BigInt.fromI32(10).pow(18);
 let ONE_MINUTE_SECONDS = BigInt.fromI32(60);
 let SINGLE_INDEX = '0';
 
-const getTradeSize = (event: PositionModifiedEvent, positionEntity: FuturesPosition): BigInt => {
-  let tradeSize = ZERO;
-
-  if (
-    // check if the trade is switching sides
-    (positionEntity.size.gt(ZERO) && positionEntity.size.minus(event.params.size).gt(positionEntity.size)) ||
-    (positionEntity.size.lt(ZERO) && positionEntity.size.minus(event.params.size).lt(positionEntity.size))
-  ) {
-    // if so, cap the trade size at closing the position
-    tradeSize = positionEntity.size;
-  } else {
-    // otherwise calculate the difference in position size
-    tradeSize = positionEntity.size.minus(event.params.size);
-  }
-
-  return tradeSize;
-};
-
 export function handleMarketAdded(event: MarketAddedEvent): void {
   let marketEntity = new FuturesMarketEntity(event.params.market.toHex());
   marketEntity.asset = event.params.asset;
@@ -126,8 +108,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     }
 
     // calculate pnl
-    const tradeSize = getTradeSize(event, positionEntity);
-    const newPnl = event.params.lastPrice.minus(positionEntity.lastPrice).times(tradeSize).div(ETHER);
+    const newPnl = event.params.lastPrice.minus(positionEntity.lastPrice).times(positionEntity.size).div(ETHER);
 
     // add pnl to this position and the trader's overall stats
     tradeEntity.pnl = newPnl;
@@ -167,7 +148,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
 
   // if there is an existing position...
   if (positionEntity.fundingIndex != event.params.fundingIndex) {
-    // 1. add accrued funding to position
+    // add accrued funding to position
     let pastFundingEntity = FundingRateUpdate.load(
       futuresMarketAddress.toHex() + '-' + positionEntity.fundingIndex.toString(),
     );
@@ -190,18 +171,8 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       positionEntity.fundingIndex = event.params.fundingIndex;
     }
 
-    // 2. calculate the change in pnl for this position
-    let tradeSize = ZERO;
-    if (event.params.tradeSize.isZero()) {
-      // if trade size is zero then they just deposited/withdraw margin
-      // we want to update the pnl value at the total size of the open position
-      tradeSize = positionEntity.size;
-    } else {
-      tradeSize = getTradeSize(event, positionEntity);
-    }
-
     // calculate pnl
-    const newPnl = event.params.lastPrice.minus(positionEntity.lastPrice).times(tradeSize).div(ETHER);
+    const newPnl = event.params.lastPrice.minus(positionEntity.lastPrice).times(positionEntity.size).div(ETHER);
 
     // add pnl to this position and the trader's overall stats
     positionEntity.pnl = positionEntity.pnl.plus(newPnl);
