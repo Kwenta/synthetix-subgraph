@@ -54,11 +54,3 @@ jobs:
         run: node scripts/deploy.js -t kwenta -s latest-rates -n optimism
         env:
           NETWORK: optimism
-      - name: Deploy ethereum mainnet rates subgraph
-        run: node scripts/deploy.js -t kwenta -s latest-rates -n mainnet
-        env:
-          NETWORK: mainnet
-      - name: Deploy kovan mainnet rates subgraph
-        run: node scripts/deploy.js -t kwenta -s latest-rates -n kovan
-        env:
-          NETWORK: kovan
