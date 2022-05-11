@@ -263,6 +263,7 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
     positionEntity.save();
   }
   if (tradeEntity) {
+    // size will be either -1 or 1 in this scenario (see handlePositionModified for details)
     tradeEntity.size = event.params.size.times(tradeEntity.size);
     tradeEntity.positionSize = ZERO;
     tradeEntity.feesPaid = tradeEntity.feesPaid.plus(event.params.fee);
