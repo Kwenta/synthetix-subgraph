@@ -144,6 +144,24 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       marketStats.averageTradeSize = marketStats.totalVolume.div(marketStats.totalTrades);
       marketStats.save();
     }
+  } else if (event.params.tradeSize.isZero() && event.params.size.isZero() && event.params.margin.isZero()) {
+    // it's a liquidation
+    let tradeEntity = new FuturesTrade(event.transaction.hash.toHex() + '-' + event.logIndex.toString());
+    tradeEntity.timestamp = event.block.timestamp;
+    tradeEntity.account = event.params.account;
+
+    // create a placeholder for trade size as long/short
+    // this will help figure out the trade direction during a liquidation
+    // since the position size will be set to zero before the PositionLiquidated event
+    tradeEntity.size = positionEntity.size.gt(ZERO) ? BigInt.fromI32(-1) : BigInt.fromI32(1);
+    tradeEntity.positionSize = ZERO;
+    tradeEntity.positionId = positionId;
+    tradeEntity.price = event.params.lastPrice;
+    tradeEntity.feesPaid = event.params.fee;
+    tradeEntity.orderType = 'Liquidation';
+    tradeEntity.asset = positionEntity.asset;
+    tradeEntity.positionClosed = true;
+    tradeEntity.save();
   }
 
   // if there is an existing position...
@@ -231,6 +249,9 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
   let futuresMarketAddress = event.transaction.to as Address;
   let positionId = futuresMarketAddress.toHex() + '-' + event.params.id.toHex();
   let positionEntity = FuturesPosition.load(positionId);
+  let tradeEntity = FuturesTrade.load(
+    event.transaction.hash.toHex() + '-' + event.logIndex.minus(BigInt.fromI32(1)).toString(),
+  );
   let statId = event.params.account.toHex();
   let statEntity = FuturesStat.load(statId);
   if (statEntity && statEntity.liquidations) {
@@ -241,6 +262,14 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
     positionEntity.isLiquidated = true;
     positionEntity.save();
   }
+  if (tradeEntity) {
+    tradeEntity.size = event.params.size.times(tradeEntity.size);
+    tradeEntity.positionSize = ZERO;
+    tradeEntity.feesPaid = tradeEntity.feesPaid.plus(event.params.fee);
+    tradeEntity.pnl = event.params.price.times(event.params.size).times(BigInt.fromI32(-1)).div(ETHER);
+    tradeEntity.save();
+  }
+
   let cumulativeEntity = getOrCreateCumulativeEntity();
   cumulativeEntity.totalLiquidations = cumulativeEntity.totalLiquidations.plus(BigInt.fromI32(1));
   cumulativeEntity.save();
@@ -249,20 +278,6 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
     let marketStats = getOrCreateMarketStats(positionEntity.asset.toHex());
     marketStats.totalLiquidations = marketStats.totalLiquidations.plus(BigInt.fromI32(1));
     marketStats.save();
-
-    let tradeEntity = new FuturesTrade(event.transaction.hash.toHex() + '-' + event.logIndex.toString());
-    tradeEntity.timestamp = event.block.timestamp;
-    tradeEntity.account = event.params.account;
-    tradeEntity.size = event.params.size;
-    tradeEntity.positionSize = event.params.size;
-    tradeEntity.positionId = positionId;
-    tradeEntity.price = event.params.price;
-    tradeEntity.feesPaid = event.params.fee;
-    tradeEntity.orderType = 'Liquidation';
-    tradeEntity.asset = positionEntity.asset;
-    tradeEntity.positionClosed = true;
-    tradeEntity.pnl = event.params.price.times(event.params.size).times(BigInt.fromI32(-1)).div(ETHER);
-    tradeEntity.save();
   }
 }
 
