@@ -150,11 +150,11 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       futuresMarketAddress.toHex() + '-' + txHash + '-' + event.logIndex.toString(),
     );
 
-    // this is a hack to get around the fact that the sometimes a withdrawalAll margin transfer event
-    // will trigger a trade entity liquidation to be created.
+    // this check is here to get around the fact that the sometimes a withdrawalAll margin transfer event
+    // will trigger a trade entity liquidation to be created. guarding against this event for now.
     // TODO confirm this is the correct fix for the long term - https://github.com/Kwenta/kwenta/issues/843
     if (marginTransferEntity == null) {
-      // if its not a withdrawal or deposit, it's a liquidation
+      // if its not a withdrawal (or deposit), it's a liquidation
       let tradeEntity = new FuturesTrade(event.transaction.hash.toHex() + '-' + event.logIndex.toString());
       tradeEntity.timestamp = event.block.timestamp;
       tradeEntity.account = event.params.account;
