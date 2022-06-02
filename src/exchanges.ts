@@ -1,23 +1,16 @@
 import {
   SynthExchange as SynthExchangeEvent,
   AtomicSynthExchange as AtomicSynthExchangeEvent,
-  ExchangeReclaim as ExchangeReclaimEvent,
-  ExchangeRebate as ExchangeRebateEvent,
   Synthetix,
 } from '../generated/subgraphs/exchanges/exchanges_Synthetix_0/Synthetix';
 
 import { ExchangeRates } from '../generated/subgraphs/exchanges/ExchangeRates_13/ExchangeRates';
-
-import { ExchangeFeeUpdated as ExchangeFeeUpdatedEvent } from '../generated/subgraphs/exchanges/exchanges_SystemSettings_0/SystemSettings';
 
 import {
   Total,
   SynthExchange,
   AtomicSynthExchange,
   Exchanger,
-  ExchangeReclaim,
-  ExchangeRebate,
-  ExchangeFee,
   SynthByCurrencyKey,
 } from '../generated/subgraphs/exchanges/schema';
 
@@ -286,50 +279,4 @@ export function handleAtomicSynthExchange(event: AtomicSynthExchangeEvent): void
   eventEntity.gasPrice = event.transaction.gasPrice;
   eventEntity.save();
   // Note that we do not update tracked totals here because atomic exchanges also emit standard SynthExchange events
-}
-
-export function handleExchangeReclaim(event: ExchangeReclaimEvent): void {
-  let txHash = event.transaction.hash.toHex();
-  let entity = new ExchangeReclaim(txHash + '-' + event.logIndex.toString());
-  entity.account = event.params.account.toHex();
-  entity.amount = toDecimal(event.params.amount);
-  entity.currencyKey = event.params.currencyKey;
-  entity.timestamp = event.block.timestamp;
-  entity.block = event.block.number;
-  entity.gasPrice = event.transaction.gasPrice;
-  let latestRate = getLatestRate(event.params.currencyKey.toString(), txHash);
-
-  if (!latestRate) {
-    log.error('handleExchangeReclaim has an issue in tx hash: {}', [txHash]);
-    return;
-  }
-  entity.amountInUSD = getUSDAmountFromAssetAmount(event.params.amount, latestRate);
-  entity.save();
-}
-
-export function handleExchangeRebate(event: ExchangeRebateEvent): void {
-  let txHash = event.transaction.hash.toHex();
-  let entity = new ExchangeRebate(txHash + '-' + event.logIndex.toString());
-  entity.account = event.params.account.toHex();
-  entity.amount = toDecimal(event.params.amount);
-  entity.currencyKey = event.params.currencyKey;
-  entity.timestamp = event.block.timestamp;
-  entity.block = event.block.number;
-  entity.gasPrice = event.transaction.gasPrice;
-  let latestRate = getLatestRate(event.params.currencyKey.toString(), txHash);
-
-  if (!latestRate) {
-    log.error('handleExchangeReclaim has an issue in tx hash: {}', [txHash]);
-    return;
-  }
-  entity.amountInUSD = getUSDAmountFromAssetAmount(event.params.amount, latestRate);
-  entity.save();
-}
-
-export function handleFeeChange(event: ExchangeFeeUpdatedEvent): void {
-  let currencyKey = event.params.synthKey.toString();
-
-  let entity = new ExchangeFee(currencyKey);
-  entity.fee = toDecimal(event.params.newExchangeFeeRate);
-  entity.save();
 }

@@ -68,30 +68,6 @@ type AtomicSynthExchange @entity {
   gasPrice: BigInt!
 }
 
-" Tracks this event from the Synthetix.sol contract "
-type ExchangeReclaim @entity {
-  id: ID!
-  account: Exchanger!
-  currencyKey: Bytes!
-  amount: BigDecimal!
-  amountInUSD: BigDecimal!
-  timestamp: BigInt!
-  gasPrice: BigInt!
-  block: BigInt!
-}
-
-" Tracks this event from the Synthetix.sol contract "
-type ExchangeRebate @entity {
-  id: ID!
-  account: Exchanger!
-  currencyKey: Bytes!
-  amount: BigDecimal!
-  amountInUSD: BigDecimal!
-  timestamp: BigInt!
-  gasPrice: BigInt!
-  block: BigInt!
-}
-
 type Total @entity {
   " $timestamp-$period-$bucketMagnitude-$synth "
   id: ID!
@@ -143,38 +119,6 @@ type Exchanger @entity {
   exchanges: [SynthExchange!]! @derivedFrom(field: "account")
 }
 
-type ExchangeFee @entity {
-  " Name of the synth. E.g. sUSD "
-  id: ID!
-  " Current Fee as a ratio of the trade amount "
-  fee: BigDecimal!
-}
-
-" DEPRECATED: See the Candles entity"
-type DailyCandle @entity {
-  " DEPRECATED: See the Candles entity "
-  id: ID!
-  synth: String!
-  open: BigDecimal!
-  high: BigDecimal!
-  low: BigDecimal!
-  close: BigDecimal!
-  timestamp: BigInt!
-}
-
-type InversePricingInfo @entity {
-  " Name of inverse synth. E.g. iETH "
-  id: ID!
-  " whether or not this inverse synth has been frozen "
-  frozen: Boolean!
-  " configured upper limit "
-  upperLimit: BigDecimal!
-  " configured lower limit "
-  lowerLimit: BigDecimal!
-  " matching price point with long synth "
-  entryPoint: BigDecimal!
-}
-
 type LatestRate @entity {
   " Name of synth. E.g. sUSD "
   id: ID!
@@ -182,6 +126,8 @@ type LatestRate @entity {
   rate: BigDecimal!
   " Address of the aggregator which produces current result "
   aggregator: Bytes!
+  " Timestamp the rate was updated "
+  timestamp: BigInt!
 }
 
 " Latest Rates over time "
@@ -198,6 +144,23 @@ type RateUpdate @entity {
   block: BigInt!
   " timestamp of the block in which the rate was recorded "
   timestamp: BigInt!
+}
+
+type Candle @entity {
+  " synth-period-periodId (periodId is timestamp / period) "
+  id: ID!
+  " Ticker for synth (e.g. 'sUSD') or 'SNX'"
+  synth: String!
+  open: BigDecimal!
+  high: BigDecimal!
+  low: BigDecimal!
+  close: BigDecimal!
+  average: BigDecimal!
+  timestamp: BigInt!
+  " Duration this candle captures in seconds. Year, quarter, month, week, day, hour, and 15 minutes available. "
+  period: BigInt!
+  " Number of RateUpdates aggregated into this candle, mostly useful for the indexer to calculate averages "
+  aggregatedPrices: BigInt!
 }
 
 type FuturesMarket @entity {

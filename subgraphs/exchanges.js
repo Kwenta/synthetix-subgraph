@@ -74,7 +74,7 @@ if (getCurrentNetwork() == 'mainnet') {
         apiVersion: '0.0.5',
         language: 'wasm/assemblyscript',
         file: '../src/exchanges.ts',
-        entities: ['SynthExchange', 'ExchangeReclaim', 'ExchangeRebate'],
+        entities: ['SynthExchange'],
         abis: [
           {
             name: 'Synthetix4',
@@ -102,14 +102,6 @@ if (getCurrentNetwork() == 'mainnet') {
             event: 'SynthExchange(indexed address,bytes32,uint256,bytes32,uint256,address)',
             handler: 'handleSynthExchange',
           },
-          {
-            event: 'ExchangeReclaim(indexed address,bytes32,uint256)',
-            handler: 'handleExchangeReclaim',
-          },
-          {
-            event: 'ExchangeRebate(indexed address,bytes32,uint256)',
-            handler: 'handleExchangeRebate',
-          },
         ],
       },
     },
@@ -131,7 +123,7 @@ getContractDeployments('ProxyERC20').forEach((a, i) => {
       apiVersion: '0.0.5',
       language: 'wasm/assemblyscript',
       file: '../src/exchanges.ts',
-      entities: ['SynthExchange', 'ExchangeReclaim', 'ExchangeRebate'],
+      entities: ['SynthExchange'],
       abis: [
         {
           name: 'Synthetix4',
@@ -162,14 +154,6 @@ getContractDeployments('ProxyERC20').forEach((a, i) => {
         {
           event: 'SynthExchange(indexed address,bytes32,uint256,bytes32,uint256,address)',
           handler: 'handleSynthExchange',
-        },
-        {
-          event: 'ExchangeReclaim(indexed address,bytes32,uint256)',
-          handler: 'handleExchangeReclaim',
-        },
-        {
-          event: 'ExchangeRebate(indexed address,bytes32,uint256)',
-          handler: 'handleExchangeRebate',
         },
         {
           event: 'AtomicSynthExchange(indexed address,bytes32,uint256,bytes32,uint256,address)',
