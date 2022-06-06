@@ -164,38 +164,6 @@ getContractDeployments('ProxyERC20').forEach((a, i) => {
   });
 });
 
-getContractDeployments('SystemSettings').forEach((a, i) => {
-  manifest.push({
-    kind: 'ethereum/contract',
-    name: `exchanges_SystemSettings_${i}`,
-    network: getCurrentNetwork(),
-    source: {
-      address: a.address,
-      startBlock: a.startBlock,
-      abi: 'SystemSettings',
-    },
-    mapping: {
-      kind: 'ethereum/events',
-      apiVersion: '0.0.5',
-      language: 'wasm/assemblyscript',
-      file: '../src/exchanges.ts',
-      entities: ['SystemSettings'],
-      abis: [
-        {
-          name: 'SystemSettings',
-          file: '../abis/SystemSettings.json',
-        },
-      ],
-      eventHandlers: [
-        {
-          event: 'ExchangeFeeUpdated(bytes32,uint256)',
-          handler: 'handleFeeChange',
-        },
-      ],
-    },
-  });
-});
-
 module.exports = {
   specVersion: '0.0.2',
   description: 'Synthetix Exchanges API',
