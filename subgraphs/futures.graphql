@@ -38,6 +38,7 @@ type FuturesPosition @entity {
   pnl: BigInt!
   feesPaid: BigInt!
   netFunding: BigInt!
+  pnlWithFeesPaid: BigInt!
   netTransfers: BigInt!
   totalDeposits: BigInt!
   fundingIndex: BigInt!

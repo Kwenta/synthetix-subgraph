@@ -85,10 +85,11 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     positionEntity.entryPrice = event.params.lastPrice;
     positionEntity.lastPrice = event.params.lastPrice;
     positionEntity.margin = event.params.margin;
-    positionEntity.initialMargin = event.params.margin;
+    positionEntity.initialMargin = event.params.margin.plus(event.params.fee);
     positionEntity.pnl = ZERO;
     positionEntity.feesPaid = ZERO;
     positionEntity.netFunding = ZERO;
+    positionEntity.pnlWithFeesPaid = ZERO;
     positionEntity.netTransfers = ZERO;
     positionEntity.totalDeposits = ZERO;
     positionEntity.fundingIndex = event.params.fundingIndex;
@@ -170,6 +171,10 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       // this will help figure out the trade direction during a liquidation
       // since the position size will be set to zero before the PositionLiquidated event
       tradeEntity.size = positionEntity.size.gt(ZERO) ? BigInt.fromI32(-1) : BigInt.fromI32(1);
+
+      // temporarily set the pnl to the total margin in the account before liquidation
+      // we will check this again in the PositionLiquidated event
+      tradeEntity.pnl = positionEntity.margin.times(BigInt.fromI32(-1));
       tradeEntity.positionSize = ZERO;
       tradeEntity.positionId = positionId;
       tradeEntity.price = event.params.lastPrice;
@@ -262,6 +267,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
   positionEntity.margin = event.params.margin;
   positionEntity.lastPrice = event.params.lastPrice;
   positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.fee);
+  positionEntity.pnlWithFeesPaid = positionEntity.pnl.minus(positionEntity.feesPaid).plus(positionEntity.netFunding);
   positionEntity.lastTxHash = event.transaction.hash;
   positionEntity.timestamp = event.block.timestamp;
 
@@ -292,6 +298,9 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
   }
   if (positionEntity) {
     positionEntity.isLiquidated = true;
+    positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.fee);
+    positionEntity.pnl = positionEntity.pnl.plus(event.params.fee);
+    positionEntity.pnlWithFeesPaid = positionEntity.pnl.minus(positionEntity.feesPaid).plus(positionEntity.netFunding);
     positionEntity.save();
   }
   if (tradeEntity) {
@@ -299,7 +308,7 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
     tradeEntity.size = event.params.size.times(tradeEntity.size);
     tradeEntity.positionSize = ZERO;
     tradeEntity.feesPaid = tradeEntity.feesPaid.plus(event.params.fee);
-    tradeEntity.pnl = event.params.price.times(event.params.size).times(BigInt.fromI32(-1)).div(ETHER);
+    tradeEntity.pnl = tradeEntity.pnl.plus(event.params.fee);
     tradeEntity.save();
   }
 
