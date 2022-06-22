@@ -8,6 +8,7 @@ type FuturesTrade @entity {
   id: ID!
   timestamp: BigInt!
   account: Bytes!
+  margin: BigInt!
   size: BigInt!
   asset: Bytes!
   price: BigInt!
