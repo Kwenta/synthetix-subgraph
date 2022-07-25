@@ -8,6 +8,7 @@ type FuturesTrade @entity {
   id: ID!
   timestamp: BigInt!
   account: Bytes!
+  abstractAccount: Bytes!
   margin: BigInt!
   size: BigInt!
   asset: Bytes!
@@ -29,6 +30,7 @@ type FuturesPosition @entity {
   market: Bytes!
   asset: Bytes!
   account: Bytes!
+  abstractAccount: Bytes!
   isOpen: Boolean!
   isLiquidated: Boolean!
   trades: BigInt!
@@ -128,4 +130,9 @@ type FuturesOrder @entity {
   orderType: FuturesOrderType!
   status: FuturesOrderStatus!
   keeper: Bytes!
+}
+
+type CrossMarginAccount @entity {
+  id: ID!
+  owner: Bytes!
 }
