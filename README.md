@@ -86,7 +86,7 @@ The Candle entity stores pricing data for each futures market provided by Chainl
 
 ### FuturesPosition
 
-The FuturesPosition entity stores the current state of every Synthetix perpetual futures position. A new position is created when a position is opened, and is considered closed when the trader modifies the position to have a `size` of zero or gets liquidated.
+The FuturesPosition entity stores the current state of every Synthetix perpetual futures position. A new position is created when a position is opened, and is considered closed when the trader modifies the position to have a `size` of zero or gets liquidated. Cross margin positions are given to the account owner.
 
 - `id` (id) - Unique identifier for this position in the format _market_-_positionId_ where _positionId_ is an incrementing index tracked by the contract.
 - `lastTxHash` (bytes) - Transaction hash of the last interaction with this position.
@@ -95,7 +95,9 @@ The FuturesPosition entity stores the current state of every Synthetix perpetual
 - `timestamp` (integer) - UTC timestamp of the last interaction with this position.
 - `market` (bytes) - Address of the futures market for this position.
 - `asset` (bytes) - A hex encoding of the name of the underlying asset: `sETH` -> `0x...`.
-- `account` (bytes) - Address of the account that opened the position.
+- `account` (bytes) - Address of the account that owns this position. For a cross margin trade, this refers to the account owner.
+- `abstractAccount` (bytes) - Address of the account that send the transaction for this position.
+- `accountType` (bytes) - `isolated_margin` or `cross_margin` depending on the source of the transaction.
 - `isOpen` (boolean) - True if the position is still open.
 - `isLiquidated` (boolean) - True if the position was liquidated.
 - `trades` (integer) - Count of interactions with this position.
@@ -123,11 +125,13 @@ The FuturesPosition entity stores the current state of every Synthetix perpetual
 
 ### FuturesTrade
 
-The FuturesTrade entity stores each interaction with a futures market where a trader either modifies their position size by submitting an order or is liquidated.
+The FuturesTrade entity stores each interaction with a futures market where a trader either modifies their position size by submitting an order or is liquidated. Cross margin trades are given to the account owner.
 
 - `id` (id) - Unique identifier for this trade in the format _txnHash_-_logIndex_.
 - `timestamp` (integer) - UTC timestamp at the time of this trade.
-- `account` (bytes) - Address of the account that made this trade.
+- `account` (bytes) - Address of the account that made this trade. For a cross margin trade, this refers to the account owner.
+- `abstractAccount` (bytes) - Address of the account that send the transaction for this trade.
+- `accountType` (bytes) - `isolated_margin` or `cross_margin` depending on the source of the transaction.
 - `size` (integer) - Size of the trade in native asset.
 - `asset` (bytes) - A hex encoding of the name of the underlying asset: `sETH` -> `0x...`.
 - `price` (integer) - Price of the asset in sUSD at the time of this trade.
@@ -140,9 +144,9 @@ The FuturesTrade entity stores each interaction with a futures market where a tr
 
 ### FuturesStat
 
-The FuturesStat entity stores all-time activity data for each trader.
+The FuturesStat entity stores all-time activity data for each trader. This includes all profits from cross margin trades made by accounts owned by this account.
 
-- `id` (id) - The address of the trader.
+- `id` (id) - The address of a trader.
 - `account` (bytes) - Same as id.
 - `feesPaid` (integer) - Total fees paid in sUSD for all trades.
 - `pnl` (integer) - Total profit/loss in sUSD for all trades.
