@@ -121,7 +121,7 @@ The FuturesPosition entity stores the current state of every Synthetix perpetual
 - These entities store all futures positions, not just those opened on Kwenta.
 - This entity tracks values to the last interaction by the trader (order, margin transfer, trade) but does not include any profit/loss or funding accrued since that interaction.
 - There is unrealized funding and pnl that is not stored on these entities. They are a "snapshot" of the position at the last interaction.
-- Average entry price is updated when a trader _increases_ their position, or is reset to the entry price when the trader changes sides. For example, if a trader modifies a short position into a short position their new `avgEntryPrice` will be the current price at modification.
+- Average entry price is updated when a trader _increases_ their position, or is reset to the entry price when the trader changes sides. For example, if a trader modifies a short position into a long position their new `avgEntryPrice` will be the current price at modification.
 
 ### FuturesTrade
 
