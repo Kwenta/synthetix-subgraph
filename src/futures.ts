@@ -48,6 +48,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
   let sendingAccount = event.params.account;
   let crossMarginAccount = CrossMarginAccount.load(sendingAccount.toHex());
   const account = crossMarginAccount ? crossMarginAccount.owner : sendingAccount;
+  const accountType = crossMarginAccount ? 'cross_margin' : 'isolated_margin';
 
   let futuresMarketAddress = event.address as Address;
   let positionId = futuresMarketAddress.toHex() + '-' + event.params.id.toHex();
@@ -78,6 +79,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     }
     positionEntity.account = account;
     positionEntity.abstractAccount = sendingAccount;
+    positionEntity.accountType = accountType;
     positionEntity.isLiquidated = false;
     positionEntity.isOpen = true;
     positionEntity.size = event.params.size;
@@ -102,7 +104,8 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     let tradeEntity = new FuturesTrade(event.transaction.hash.toHex() + '-' + event.logIndex.toString());
     tradeEntity.timestamp = event.block.timestamp;
     tradeEntity.account = account;
-    tradeEntity.abstractAccount = account;
+    tradeEntity.abstractAccount = sendingAccount;
+    tradeEntity.accountType = accountType;
     tradeEntity.size = event.params.tradeSize;
     tradeEntity.margin = event.params.margin.plus(event.params.fee);
     tradeEntity.positionSize = event.params.size;
@@ -171,6 +174,8 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       let tradeEntity = new FuturesTrade(event.transaction.hash.toHex() + '-' + event.logIndex.toString());
       tradeEntity.timestamp = event.block.timestamp;
       tradeEntity.account = account;
+      tradeEntity.abstractAccount = sendingAccount;
+      tradeEntity.accountType = accountType;
 
       // create a placeholder for trade size as long/short
       // this will help figure out the trade direction during a liquidation

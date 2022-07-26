@@ -9,6 +9,7 @@ type FuturesTrade @entity {
   timestamp: BigInt!
   account: Bytes!
   abstractAccount: Bytes!
+  accountType: FuturesAccountType!
   margin: BigInt!
   size: BigInt!
   asset: Bytes!
@@ -31,6 +32,7 @@ type FuturesPosition @entity {
   asset: Bytes!
   account: Bytes!
   abstractAccount: Bytes!
+  accountType: FuturesAccountType!
   isOpen: Boolean!
   isLiquidated: Boolean!
   trades: BigInt!
@@ -117,6 +119,11 @@ enum FuturesOrderStatus {
   Pending
   Filled
   Cancelled
+}
+
+enum FuturesAccountType {
+  isolated_margin
+  cross_margin
 }
 
 type FuturesOrder @entity {
