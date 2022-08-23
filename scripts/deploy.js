@@ -20,7 +20,7 @@ function exec(cmd) {
 
 program
   .option('-u --update-synthetix [version]', 'Update the Synthetix package and contract ABIs to the given version')
-  .option('-s --subgraph <names>', 'The subgraph to deploy to the hosted service')
+  .option('-s --subgraph <name>', 'The subgraph to deploy to the hosted service')
   .option('-t --team <name>', 'The Graph team name')
   .option('-n --network <value>', 'Network to deploy on for the hosted service')
   .option('-a --access-token <token>', 'The Graph access token')
@@ -168,6 +168,44 @@ program.action(async () => {
         );
         console.log(green(`Successfully deployed to ${settings.network} on the hosted service.`));
       }
+    }
+  }
+
+  if (settings.subgraph == 'main' && !settings.buildOnly) {
+    const deployDecentralized = await inquirer.prompt(
+      [
+        {
+          message: 'Would you like to deploy to the main subgraph to the decentralized network?',
+          name: 'deployDecentralized',
+          type: 'confirm',
+        },
+      ],
+      settings,
+    );
+
+    if (deployDecentralized.deployDecentralized) {
+      const { version: defaultVersion } = require('../node_modules/synthetix/package.json');
+      const versionLabel = await inquirer.prompt(
+        [
+          {
+            message: 'What version label should be used for this release?',
+            name: 'versionLabel',
+            default: defaultVersion,
+          },
+        ],
+        settings,
+      );
+
+      console.log('Deploying to decentralized network...');
+      settings = {
+        versionLabel: versionLabel.versionLabel,
+        ...settings,
+      };
+      console.log(settings);
+      await exec(
+        `./node_modules/.bin/graph deploy --studio ${settings.subgraph} --version-label ${settings.versionLabel} --access-token  ${settings.accessToken} ./subgraphs/main.js`,
+      );
+      console.log(green('Successfully deployed to decentralized network.'));
     }
   }
 
