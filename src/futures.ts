@@ -1,4 +1,4 @@
-import { Address, BigInt, Bytes, store } from '@graphprotocol/graph-ts';
+import { Address, BigInt, Bytes, DataSourceContext, store } from '@graphprotocol/graph-ts';
 
 import {
   FuturesMarket as FuturesMarketEntity,
@@ -25,7 +25,8 @@ import {
   FundingRecomputed as FundingRecomputedEvent,
   NextPriceOrderSubmitted as NextPriceOrderSubmittedEvent,
   NextPriceOrderRemoved as NextPriceOrderRemovedEvent,
-} from '../generated/subgraphs/futures/futures_FuturesMarketManager_0/FuturesMarket';
+} from '../generated/subgraphs/futures/templates/FuturesMarket/FuturesMarket';
+import { FuturesMarket } from '../generated/subgraphs/futures/templates';
 import { ZERO } from './lib/helpers';
 
 let ETHER = BigInt.fromI32(10).pow(18);
@@ -40,6 +41,10 @@ export function handleMarketAdded(event: MarketAddedEvent): void {
   marketStats.save();
   marketEntity.marketStats = marketStats.id;
   marketEntity.save();
+
+  let context = new DataSourceContext();
+  context.setString('market', event.params.market.toHex());
+  FuturesMarket.createWithContext(event.params.market, context);
 }
 
 export function handleMarketRemoved(event: MarketRemovedEvent): void {

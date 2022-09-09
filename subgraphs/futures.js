@@ -46,59 +46,53 @@ getContractDeployments('FuturesMarketManager').forEach((a, i) => {
 });
 
 // futures markets
-synths.forEach((synth, i) => {
-  getContractDeployments(`FuturesMarket${synth}`).forEach((a, i) => {
-    manifest.push({
-      kind: 'ethereum/contract',
-      name: `futures_FuturesMarket_${synth}_${i}`,
-      network: getCurrentNetwork(),
-      source: {
-        address: a.address,
-        startBlock: a.startBlock,
-        abi: 'FuturesMarket',
+const futuresMarketTemplate = {
+  kind: 'ethereum/contract',
+  name: `FuturesMarket`,
+  network: getCurrentNetwork(),
+  source: {
+    abi: 'FuturesMarket',
+  },
+  mapping: {
+    kind: 'ethereum/events',
+    apiVersion: '0.0.5',
+    language: 'wasm/assemblyscript',
+    file: '../src/futures.ts',
+    entities: ['FuturesMarket', 'FuturesPosition', 'FuturesTrade'],
+    abis: [
+      {
+        name: 'FuturesMarket',
+        file: '../abis/FuturesMarket.json',
       },
-      mapping: {
-        kind: 'ethereum/events',
-        apiVersion: '0.0.5',
-        language: 'wasm/assemblyscript',
-        file: '../src/futures.ts',
-        entities: ['FuturesMarket', 'FuturesPosition', 'FuturesTrade'],
-        abis: [
-          {
-            name: 'FuturesMarket',
-            file: '../abis/FuturesMarket.json',
-          },
-        ],
-        eventHandlers: [
-          {
-            event: 'MarginTransferred(indexed address,int256)',
-            handler: 'handleMarginTransferred',
-          },
-          {
-            event: 'PositionModified(indexed uint256,indexed address,uint256,int256,int256,uint256,uint256,uint256)',
-            handler: 'handlePositionModified',
-          },
-          {
-            event: 'PositionLiquidated(indexed uint256,indexed address,indexed address,int256,uint256,uint256)',
-            handler: 'handlePositionLiquidated',
-          },
-          {
-            event: 'FundingRecomputed(int256,uint256,uint256)',
-            handler: 'handleFundingRecomputed',
-          },
-          {
-            event: 'NextPriceOrderSubmitted(indexed address,int256,uint256,uint256,uint256,bytes32)',
-            handler: 'handleNextPriceOrderSubmitted',
-          },
-          {
-            event: 'NextPriceOrderRemoved(indexed address,uint256,int256,uint256,uint256,uint256,bytes32)',
-            handler: 'handleNextPriceOrderRemoved',
-          },
-        ],
+    ],
+    eventHandlers: [
+      {
+        event: 'MarginTransferred(indexed address,int256)',
+        handler: 'handleMarginTransferred',
       },
-    });
-  });
-});
+      {
+        event: 'PositionModified(indexed uint256,indexed address,uint256,int256,int256,uint256,uint256,uint256)',
+        handler: 'handlePositionModified',
+      },
+      {
+        event: 'PositionLiquidated(indexed uint256,indexed address,indexed address,int256,uint256,uint256)',
+        handler: 'handlePositionLiquidated',
+      },
+      {
+        event: 'FundingRecomputed(int256,uint256,uint256)',
+        handler: 'handleFundingRecomputed',
+      },
+      {
+        event: 'NextPriceOrderSubmitted(indexed address,int256,uint256,uint256,uint256,bytes32)',
+        handler: 'handleNextPriceOrderSubmitted',
+      },
+      {
+        event: 'NextPriceOrderRemoved(indexed address,uint256,int256,uint256,uint256,uint256,bytes32)',
+        handler: 'handleNextPriceOrderRemoved',
+      },
+    ],
+  },
+};
 
 // crossmargin
 // addresses
@@ -190,5 +184,5 @@ module.exports = {
     file: './futures.graphql',
   },
   dataSources: manifest,
-  templates: [marginBaseTemplate],
+  templates: [marginBaseTemplate, futuresMarketTemplate],
 };
