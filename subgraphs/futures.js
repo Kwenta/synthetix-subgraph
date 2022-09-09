@@ -146,6 +146,42 @@ manifest.push({
   },
 });
 
+const marginBaseTemplate = {
+  kind: 'ethereum/contract',
+  name: `MarginBase`,
+  network: getCurrentNetwork(),
+  source: {
+    abi: 'MarginBase',
+  },
+  mapping: {
+    kind: 'ethereum/events',
+    apiVersion: '0.0.5',
+    language: 'wasm/assemblyscript',
+    file: '../src/crossmargin.ts',
+    entities: ['MarginBase'],
+    abis: [
+      {
+        name: 'MarginBase',
+        file: '../abis/MarginBase.json',
+      },
+    ],
+    eventHandlers: [
+      {
+        event: 'OrderPlaced(indexed address,uint256,bytes32,int256,int256,uint256,uint8)',
+        handler: 'handleOrderPlaced',
+      },
+      {
+        event: 'OrderCancelled(indexed address,uint256)',
+        handler: 'handleOrderCancelled',
+      },
+      {
+        event: 'OrderFilled(indexed address,uint256,uint256,uint256)',
+        handler: 'handleOrderFilled',
+      },
+    ],
+  },
+};
+
 module.exports = {
   specVersion: '0.0.2',
   description: 'Kwenta Futures API',
@@ -154,4 +190,5 @@ module.exports = {
     file: './futures.graphql',
   },
   dataSources: manifest,
+  templates: [marginBaseTemplate],
 };
