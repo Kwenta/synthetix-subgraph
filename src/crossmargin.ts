@@ -6,7 +6,7 @@ import {
   OrderCancelled as OrderCancelledEvent,
 } from '../generated/subgraphs/futures/crossmargin_MarginBase/MarginBase';
 import { MarginBase } from '../generated/subgraphs/futures/templates';
-import { CrossMarginAccount } from '../generated/subgraphs/futures/schema';
+import { CrossMarginAccount, FuturesOrder } from '../generated/subgraphs/futures/schema';
 
 export function handleNewAccount(event: NewAccountEvent): void {
   const cmAccountAddress = event.params.account as Address;
@@ -24,13 +24,47 @@ export function handleNewAccount(event: NewAccountEvent): void {
 }
 
 export function handleOrderPlaced(event: OrderPlacedEvent): void {
-  return;
+  const marketAsset = event.params.marketKey;
+
+  let sendingAccount = event.params.account;
+  let crossMarginAccount = CrossMarginAccount.load(sendingAccount.toHex());
+  const account = crossMarginAccount ? crossMarginAccount.owner : sendingAccount;
+
+  const futuresOrderEntityId = `CM-${sendingAccount.toHexString()}-${event.params.orderId.toString()}`;
+
+  let futuresOrderEntity = FuturesOrder.load(futuresOrderEntityId);
+  if (futuresOrderEntity == null) {
+    futuresOrderEntity = new FuturesOrder(futuresOrderEntityId);
+  }
+
+  futuresOrderEntity.orderType =
+    event.params.orderType === 0 ? 'Limit' : event.params.orderType === 1 ? 'Stop' : 'Market';
+  futuresOrderEntity.status = 'Pending';
+  futuresOrderEntity.asset = marketAsset;
+  futuresOrderEntity.account = account;
+  futuresOrderEntity.size = event.params.sizeDelta;
+  futuresOrderEntity.orderId = event.params.orderId;
+  futuresOrderEntity.timestamp = event.block.timestamp;
+
+  futuresOrderEntity.save();
 }
 
 export function handleOrderFilled(event: OrderFilledEvent): void {
-  return;
+  const futuresOrderEntityId = `CM-${event.params.account.toHexString()}-${event.params.orderId.toString()}`;
+  let futuresOrderEntity = FuturesOrder.load(futuresOrderEntityId);
+  if (futuresOrderEntity) {
+    futuresOrderEntity.status = 'Filled';
+    futuresOrderEntity.timestamp = event.block.timestamp;
+    futuresOrderEntity.save();
+  }
 }
 
 export function handleOrderCancelled(event: OrderCancelledEvent): void {
-  return;
+  const futuresOrderEntityId = `CM-${event.params.account.toHexString()}-${event.params.orderId.toString()}`;
+  let futuresOrderEntity = FuturesOrder.load(futuresOrderEntityId);
+  if (futuresOrderEntity) {
+    futuresOrderEntity.status = 'Cancelled';
+    futuresOrderEntity.timestamp = event.block.timestamp;
+    futuresOrderEntity.save();
+  }
 }
