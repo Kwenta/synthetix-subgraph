@@ -491,8 +491,10 @@ export function handleNextPriceOrderSubmitted(event: NextPriceOrderSubmittedEven
       futuresOrderEntity.status = 'Pending';
       futuresOrderEntity.asset = marketAsset;
       futuresOrderEntity.account = account;
+      futuresOrderEntity.abstractAccount = sendingAccount;
       futuresOrderEntity.size = event.params.sizeDelta;
       futuresOrderEntity.orderId = event.params.targetRoundId;
+      futuresOrderEntity.targetRoundId = event.params.targetRoundId;
       futuresOrderEntity.timestamp = event.block.timestamp;
 
       futuresOrderEntity.save();

@@ -144,6 +144,7 @@ type FuturesOrder @entity {
   account: Bytes!
   abstractAccount: Bytes!
   orderId: BigInt!
+  targetRoundId: BigInt! # DEPRECATED
   timestamp: BigInt!
   orderType: FuturesOrderType!
   status: FuturesOrderStatus!
