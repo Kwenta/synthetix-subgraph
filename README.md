@@ -155,6 +155,27 @@ The FuturesStat entity stores all-time activity data for each trader. This inclu
 - `totalTrades` (integer) - Count of the trader's trades.
 - `totalVolume` (integer) - Total trading volume of the trader in sUSD.
 
+### FuturesCumulativeStat
+
+The FuturesCumulativeStat entity stores all-time activity data for each perp market and all markets in aggregate.
+
+- `id` (id) - The address of the market OR `0` for all markets.
+- `totalLiquidations` (integer) - Count of the trader's liquidations.
+- `totalTrades` (integer) - Count of the trader's trades.
+- `totalTraders` (integer) - Count of unique traders that have deposited margin to this market.
+- `totalVolume` (integer) - Total trading volume of the trader in sUSD.
+- `averageTradeSize` (integer) - Total volume divided by the number of trades.
+
+### FuturesHourlyStat
+
+The FuturesHourlyStat entity stores hourly activity data for each perp market.
+
+- `id` (id) - The address of the market and the unix timestamp at the beginning of the hour, `-` separated.
+- `timestamp` (integer) - Unix timestamp in seconds at the start of this hour.
+- `asset` (bytes) - A hex encoding of the name of the underlying asset: `sETH` -> `0x...`.
+- `trades` (integer) - Count of trades this hour.
+- `volume` (integer) - Total trading volume on this market in sUSD.
+
 ### FuturesMarginTransfer
 
 The FuturesMarginTransfer entity stores each deposit or withdrawal of margin between a trader and a futures market.
