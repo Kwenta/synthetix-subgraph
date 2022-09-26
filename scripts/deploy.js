@@ -79,6 +79,14 @@ program.action(async () => {
     });
   }
 
+  if (!OPTIONS.accessToken) {
+    inquiries.push({
+      message: 'What is your decentralized access token?',
+      name: 'accessToken',
+      default: '',
+    });
+  }
+
   let settings = {
     ...(await inquirer.prompt(inquiries, OPTIONS)),
     ...OPTIONS,
@@ -203,7 +211,9 @@ program.action(async () => {
       };
       console.log(settings);
       await exec(
-        `./node_modules/.bin/graph deploy --studio ${settings.subgraph} --version-label ${settings.versionLabel} --access-token  ${settings.accessToken} ./subgraphs/main.js`,
+        `./node_modules/.bin/graph deploy --studio ${networkPrefix(settings.network)}${
+          settings.subgraph
+        } --version-label ${settings.versionLabel} --access-token  ${settings.accessToken} ./subgraphs/main.js`,
       );
       console.log(green('Successfully deployed to decentralized network.'));
     }
