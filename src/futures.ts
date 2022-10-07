@@ -488,7 +488,7 @@ export function handleNextPriceOrderSubmitted(event: NextPriceOrderSubmittedEven
       }
 
       futuresOrderEntity.orderType = 'NextPrice';
-      futuresOrderEntity.status = 'Pending';
+      futuresOrderEntity.status = 'Open';
       futuresOrderEntity.asset = marketAsset;
       futuresOrderEntity.market = futuresMarketAddress;
       futuresOrderEntity.account = account;

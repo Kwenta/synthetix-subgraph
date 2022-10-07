@@ -42,8 +42,8 @@ export function handleOrderPlaced(event: OrderPlacedEvent): void {
 
   // fill in the data and save
   futuresOrderEntity.orderType =
-    event.params.orderType === 0 ? 'Limit' : event.params.orderType === 1 ? 'Stop' : 'Market';
-  futuresOrderEntity.status = 'Pending';
+    event.params.orderType === 0 ? 'Limit' : event.params.orderType === 1 ? 'StopMarket' : 'Market';
+  futuresOrderEntity.status = 'Open';
   futuresOrderEntity.asset = marketAsset;
   futuresOrderEntity.account = account;
   futuresOrderEntity.abstractAccount = sendingAccount;
