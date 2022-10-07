@@ -126,6 +126,7 @@ enum FuturesOrderType {
 }
 
 enum FuturesOrderStatus {
+  Pending
   Open
   Filled
   Cancelled
@@ -146,6 +147,7 @@ type FuturesOrder @entity {
   orderId: BigInt!
   targetRoundId: BigInt!
   targetPrice: BigInt!
+  marginDelta: BigInt!
   timestamp: BigInt!
   orderType: FuturesOrderType!
   status: FuturesOrderStatus!
