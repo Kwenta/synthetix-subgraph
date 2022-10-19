@@ -46,7 +46,7 @@ getContractDeployments('FuturesMarketManager').forEach((a, i) => {
 // futures markets
 const futuresMarketTemplate = {
   kind: 'ethereum/contract',
-  name: `FuturesMarket`,
+  name: 'FuturesMarket',
   network: getCurrentNetwork(),
   source: {
     abi: 'FuturesMarket',
@@ -117,7 +117,7 @@ const crossMarginStartBlock =
 
 manifest.push({
   kind: 'ethereum/contract',
-  name: `crossmargin_factory`,
+  name: 'crossmargin_factory',
   network: getCurrentNetwork(),
   source: {
     address: crossMarginAddress,
@@ -147,7 +147,7 @@ manifest.push({
 
 const marginBaseTemplate = {
   kind: 'ethereum/contract',
-  name: `MarginBase`,
+  name: 'MarginBase',
   network: getCurrentNetwork(),
   source: {
     abi: 'MarginBase',
