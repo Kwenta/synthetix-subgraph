@@ -16,7 +16,7 @@ import {
   FuturesTrade,
   CrossMarginAccountTransfer,
 } from '../generated/subgraphs/futures/schema';
-import { BPS_CONVERSION, ETHER, ZERO_ADDRESS } from './lib/helpers';
+import { BPS_CONVERSION, ETHER } from './lib/helpers';
 
 // temporary cross-margin fee solution
 let CROSSMARGIN_ADVANCED_ORDER_BPS = BigInt.fromI32(3);
