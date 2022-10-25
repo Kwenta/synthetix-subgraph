@@ -16,7 +16,7 @@ import {
   FuturesTrade,
   CrossMarginAccountTransfer,
 } from '../generated/subgraphs/futures/schema';
-import { BPS_CONVERSION, ETHER } from './lib/helpers';
+import { BPS_CONVERSION, ETHER, ZERO_ADDRESS } from './lib/helpers';
 
 // temporary cross-margin fee solution
 let CROSSMARGIN_ADVANCED_ORDER_BPS = BigInt.fromI32(3);
@@ -130,9 +130,9 @@ export function handleOrderCancelled(event: OrderCancelledEvent): void {
 }
 
 export function handleDeposit(event: DepositEvent): void {
-  let sendingAccount = event.params.user;
-  let crossMarginAccount = CrossMarginAccount.load(sendingAccount.toHex());
-  if (crossMarginAccount) {
+  let sendingAccount = event.transaction.to;
+  let crossMarginAccount = CrossMarginAccount.load(sendingAccount ? sendingAccount.toHex() : '');
+  if (sendingAccount && crossMarginAccount) {
     const accountOwner = crossMarginAccount.owner;
 
     let crossMarginTransfer = new CrossMarginAccountTransfer(
@@ -148,9 +148,9 @@ export function handleDeposit(event: DepositEvent): void {
 }
 
 export function handleWithdraw(event: WithdrawEvent): void {
-  let sendingAccount = event.params.user;
-  let crossMarginAccount = CrossMarginAccount.load(sendingAccount.toHex());
-  if (crossMarginAccount) {
+  let sendingAccount = event.transaction.to;
+  let crossMarginAccount = CrossMarginAccount.load(sendingAccount ? sendingAccount.toHex() : '');
+  if (sendingAccount && crossMarginAccount) {
     const accountOwner = crossMarginAccount.owner;
 
     let crossMarginTransfer = new CrossMarginAccountTransfer(
