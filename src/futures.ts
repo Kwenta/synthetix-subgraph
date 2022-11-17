@@ -27,7 +27,7 @@ import {
   NextPriceOrderRemoved as NextPriceOrderRemovedEvent,
 } from '../generated/subgraphs/futures/templates/FuturesMarket/FuturesMarket';
 import { FuturesMarket } from '../generated/subgraphs/futures/templates';
-import { BPS_CONVERSION, DAY_SECONDS, ETHER, ONE_HOUR_SECONDS, ZERO } from './lib/helpers';
+import { BPS_CONVERSION, DAY_SECONDS, ETHER, ONE, ONE_HOUR_SECONDS, ZERO } from './lib/helpers';
 
 let SINGLE_INDEX = '0';
 
@@ -180,7 +180,14 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       marketCumulativeStats.save();
 
       // update aggregates
-      updateAggregateStatEntities(positionEntity.asset, event.block.timestamp, volume, synthetixFeePaid, kwentaFeePaid);
+      updateAggregateStatEntities(
+        positionEntity.asset,
+        event.block.timestamp,
+        ONE,
+        volume,
+        synthetixFeePaid,
+        kwentaFeePaid,
+      );
 
       // DEPRECATE
       const oneHourTimestamp = getTimeID(event.block.timestamp, ONE_HOUR_SECONDS);
@@ -347,11 +354,8 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
       .times(BigInt.fromI32(-1));
     positionEntity.pnl = positionEntity.pnlWithFeesPaid.plus(positionEntity.feesPaid).minus(positionEntity.netFunding);
     positionEntity.save();
-
-    // update aggregates
-    const volume = event.params.size.times(event.params.price).div(ETHER).abs();
-    updateAggregateStatEntities(positionEntity.asset, event.block.timestamp, volume, event.params.fee, ZERO);
   }
+
   if (tradeEntity) {
     // size will be either -1 or 1 in this scenario (see handlePositionModified for details)
     tradeEntity.size = event.params.size.times(tradeEntity.size);
@@ -417,6 +421,7 @@ function getOrCreateMarketAggregateStats(asset: Bytes, timestamp: BigInt, period
 export function updateAggregateStatEntities(
   asset: Bytes,
   timestamp: BigInt,
+  trades: BigInt,
   volume: BigInt,
   feesSynthetix: BigInt,
   feesKwenta: BigInt,
@@ -425,10 +430,10 @@ export function updateAggregateStatEntities(
     const thisPeriod = AGG_PERIODS[period];
     const aggTimestamp = getTimeID(timestamp, thisPeriod);
     let aggStats = getOrCreateMarketAggregateStats(asset, aggTimestamp, thisPeriod);
-    aggStats.trades = aggStats.trades.plus(BigInt.fromI32(1));
+    aggStats.trades = aggStats.trades.plus(trades);
     aggStats.volume = aggStats.volume.plus(volume);
-    aggStats.feesSynthetix = aggStats.volume.plus(feesSynthetix);
-    aggStats.feesKwenta = aggStats.volume.plus(feesKwenta);
+    aggStats.feesSynthetix = aggStats.feesSynthetix.plus(feesSynthetix);
+    aggStats.feesKwenta = aggStats.feesKwenta.plus(feesKwenta);
     aggStats.save();
   }
 }
