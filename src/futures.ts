@@ -27,7 +27,7 @@ import {
   NextPriceOrderRemoved as NextPriceOrderRemovedEvent,
 } from '../generated/subgraphs/futures/templates/FuturesMarket/FuturesMarket';
 import { FuturesMarket } from '../generated/subgraphs/futures/templates';
-import { BPS_CONVERSION, DAY_SECONDS, ETHER, ONE, ONE_HOUR_SECONDS, ZERO } from './lib/helpers';
+import { BPS_CONVERSION, DAY_SECONDS, ETHER, ONE, ONE_HOUR_SECONDS, strToBytes, ZERO } from './lib/helpers';
 
 let SINGLE_INDEX = '0';
 
@@ -429,12 +429,22 @@ export function updateAggregateStatEntities(
   for (let period = 0; period < AGG_PERIODS.length; period++) {
     const thisPeriod = AGG_PERIODS[period];
     const aggTimestamp = getTimeID(timestamp, thisPeriod);
+
+    // update the aggregate for this market
     let aggStats = getOrCreateMarketAggregateStats(asset, aggTimestamp, thisPeriod);
     aggStats.trades = aggStats.trades.plus(trades);
     aggStats.volume = aggStats.volume.plus(volume);
     aggStats.feesSynthetix = aggStats.feesSynthetix.plus(feesSynthetix);
     aggStats.feesKwenta = aggStats.feesKwenta.plus(feesKwenta);
     aggStats.save();
+
+    // update the aggregate for all markets
+    let aggCumulativeStats = getOrCreateMarketAggregateStats(new Bytes(0), aggTimestamp, thisPeriod);
+    aggCumulativeStats.trades = aggCumulativeStats.trades.plus(trades);
+    aggCumulativeStats.volume = aggCumulativeStats.volume.plus(volume);
+    aggCumulativeStats.feesSynthetix = aggCumulativeStats.feesSynthetix.plus(feesSynthetix);
+    aggCumulativeStats.feesKwenta = aggCumulativeStats.feesKwenta.plus(feesKwenta);
+    aggCumulativeStats.save();
   }
 }
 
