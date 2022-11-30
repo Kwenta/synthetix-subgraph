@@ -1,4 +1,4 @@
-import { Address, BigInt, Bytes, DataSourceContext, store } from '@graphprotocol/graph-ts';
+import { Address, BigInt, Bytes, DataSourceContext, log, store } from '@graphprotocol/graph-ts';
 
 import {
   FuturesMarket as FuturesMarketEntity,
@@ -25,7 +25,7 @@ import {
   NextPriceOrderSubmitted as NextPriceOrderSubmittedEvent,
   NextPriceOrderRemoved as NextPriceOrderRemovedEvent,
 } from '../generated/subgraphs/futures/templates/FuturesMarket/FuturesMarket';
-import { FuturesMarket } from '../generated/subgraphs/futures/templates';
+import { FuturesMarket, PerpsMarket } from '../generated/subgraphs/futures/templates';
 import { BPS_CONVERSION, DAY_SECONDS, ETHER, ONE, ONE_HOUR_SECONDS, strToBytes, ZERO } from './lib/helpers';
 
 let SINGLE_INDEX = '0';
@@ -37,17 +37,34 @@ let CROSSMARGIN_TRADING_BPS = BigInt.fromI32(2);
 export const AGG_PERIODS = [ONE_HOUR_SECONDS, DAY_SECONDS];
 
 export function handleMarketAdded(event: MarketAddedEvent): void {
+  const marketKey = event.params.marketKey.toString();
+
+  // create futures market
   let marketEntity = new FuturesMarketEntity(event.params.market.toHex());
   marketEntity.asset = event.params.asset;
   marketEntity.marketKey = event.params.marketKey;
-  let marketStats = getOrCreateMarketCumulativeStats(event.params.asset.toHex());
+
+  // create market cumulative stats
+  let marketStats = getOrCreateMarketCumulativeStats(event.params.marketKey.toHex());
   marketStats.save();
   marketEntity.marketStats = marketStats.id;
   marketEntity.save();
 
   let context = new DataSourceContext();
-  context.setString('market', event.params.market.toHex());
-  FuturesMarket.createWithContext(event.params.market, context);
+  if (marketKey.startsWith('p')) {
+    log.info('New V2 market added: {}', [marketKey]);
+
+    // perps v2 market
+    context.setString('market', event.params.market.toHex());
+    PerpsMarket.createWithContext(event.params.market, context);
+  }
+  if (marketKey.startsWith('s')) {
+    log.info('New V1 market added: {}', [marketKey]);
+
+    // futures v1 market
+    context.setString('market', event.params.market.toHex());
+    FuturesMarket.createWithContext(event.params.market, context);
+  }
 }
 
 export function handleMarketRemoved(event: MarketRemovedEvent): void {
@@ -380,10 +397,10 @@ function getOrCreateCumulativeEntity(): FuturesCumulativeStat {
   return cumulativeEntity as FuturesCumulativeStat;
 }
 
-function getOrCreateMarketCumulativeStats(asset: string): FuturesCumulativeStat {
-  let cumulativeEntity = FuturesCumulativeStat.load(asset);
+function getOrCreateMarketCumulativeStats(marketKey: string): FuturesCumulativeStat {
+  let cumulativeEntity = FuturesCumulativeStat.load(marketKey);
   if (cumulativeEntity == null) {
-    cumulativeEntity = new FuturesCumulativeStat(asset);
+    cumulativeEntity = new FuturesCumulativeStat(marketKey);
     cumulativeEntity.totalLiquidations = ZERO;
     cumulativeEntity.totalTrades = ZERO;
     cumulativeEntity.totalTraders = ZERO;
