@@ -51,14 +51,13 @@ export function handleMarketAdded(event: MarketAddedEvent): void {
   marketEntity.save();
 
   let context = new DataSourceContext();
-  if (marketKey.startsWith('p')) {
+  if (marketKey.endsWith('PERP')) {
     log.info('New V2 market added: {}', [marketKey]);
 
     // perps v2 market
     context.setString('market', event.params.market.toHex());
     PerpsMarket.createWithContext(event.params.market, context);
-  }
-  if (marketKey.endsWith('PERP')) {
+  } else if (marketKey.startsWith('s')) {
     log.info('New V1 market added: {}', [marketKey]);
 
     // futures v1 market
