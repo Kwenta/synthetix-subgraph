@@ -58,7 +58,7 @@ export function handleMarketAdded(event: MarketAddedEvent): void {
     context.setString('market', event.params.market.toHex());
     PerpsMarket.createWithContext(event.params.market, context);
   }
-  if (marketKey.startsWith('s')) {
+  if (marketKey.endsWith('PERP')) {
     log.info('New V1 market added: {}', [marketKey]);
 
     // futures v1 market
