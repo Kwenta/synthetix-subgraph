@@ -125,6 +125,7 @@ enum FuturesOrderType {
   StopMarket
   Market
   Liquidation
+  Delayed
 }
 
 enum FuturesOrderStatus {

@@ -25,6 +25,10 @@ import {
   NextPriceOrderSubmitted as NextPriceOrderSubmittedEvent,
   NextPriceOrderRemoved as NextPriceOrderRemovedEvent,
 } from '../generated/subgraphs/futures/templates/FuturesMarket/FuturesMarket';
+import {
+  DelayedOrderSubmitted as DelayedOrderSubmittedEvent,
+  DelayedOrderRemoved as DelayedOrderRemovedEvent,
+} from '../generated/subgraphs/futures/templates/PerpsMarket/PerpsV2MarketProxyable';
 import { FuturesMarket, PerpsMarket } from '../generated/subgraphs/futures/templates';
 import { BPS_CONVERSION, DAY_SECONDS, ETHER, ONE, ONE_HOUR_SECONDS, strToBytes, ZERO } from './lib/helpers';
 
@@ -607,6 +611,100 @@ export function handleNextPriceOrderRemoved(event: NextPriceOrderRemovedEvent): 
           // update order values
           futuresOrderEntity.status = 'Filled';
           tradeEntity.orderType = 'NextPrice';
+
+          // add fee if not self-executed
+          if (futuresOrderEntity.keeper != futuresOrderEntity.account) {
+            tradeEntity.feesPaid = tradeEntity.feesPaid.plus(event.params.keeperDeposit);
+            statEntity.feesPaid = statEntity.feesPaid.plus(event.params.keeperDeposit);
+            if (positionEntity) {
+              positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.keeperDeposit);
+              positionEntity.save();
+            }
+
+            statEntity.save();
+          }
+
+          tradeEntity.save();
+        } else if (statEntity) {
+          if (futuresOrderEntity.keeper != futuresOrderEntity.account) {
+            statEntity.feesPaid = statEntity.feesPaid.plus(event.params.keeperDeposit);
+            statEntity.save();
+          }
+
+          futuresOrderEntity.status = 'Cancelled';
+        }
+
+        futuresOrderEntity.save();
+      }
+    }
+  }
+}
+
+export function handleDelayedOrderSubmitted(event: DelayedOrderSubmittedEvent): void {
+  if (event.params.trackingCode.toString() == 'KWENTA') {
+    let futuresMarketAddress = event.address as Address;
+    let sendingAccount = event.params.account;
+    let crossMarginAccount = CrossMarginAccount.load(sendingAccount.toHex());
+    const account = crossMarginAccount ? crossMarginAccount.owner : sendingAccount;
+
+    let marketEntity = FuturesMarketEntity.load(futuresMarketAddress.toHex());
+    if (marketEntity) {
+      let marketAsset = marketEntity.asset;
+
+      const futuresOrderEntityId = `NP-${marketAsset}-${sendingAccount.toHexString()}-${event.params.targetRoundId.toString()}`;
+
+      let futuresOrderEntity = FuturesOrder.load(futuresOrderEntityId);
+      if (futuresOrderEntity == null) {
+        futuresOrderEntity = new FuturesOrder(futuresOrderEntityId);
+      }
+
+      futuresOrderEntity.orderType = 'Delayed';
+      futuresOrderEntity.status = 'Pending';
+      futuresOrderEntity.asset = marketAsset;
+      futuresOrderEntity.market = futuresMarketAddress;
+      futuresOrderEntity.account = account;
+      futuresOrderEntity.abstractAccount = sendingAccount;
+      futuresOrderEntity.size = event.params.sizeDelta;
+      futuresOrderEntity.orderId = event.params.targetRoundId;
+      futuresOrderEntity.targetRoundId = event.params.targetRoundId;
+      futuresOrderEntity.timestamp = event.block.timestamp;
+
+      futuresOrderEntity.save();
+    }
+  }
+}
+
+export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void {
+  if (event.params.trackingCode.toString() == 'KWENTA') {
+    let sendingAccount = event.params.account;
+    let crossMarginAccount = CrossMarginAccount.load(sendingAccount.toHex());
+    const account = crossMarginAccount ? crossMarginAccount.owner : sendingAccount;
+
+    let statEntity = FuturesStat.load(account.toHex());
+
+    let futuresMarketAddress = event.address as Address;
+
+    let marketEntity = FuturesMarketEntity.load(futuresMarketAddress.toHex());
+    if (marketEntity) {
+      let marketAsset = marketEntity.asset;
+
+      const futuresOrderEntityId = `NP-${marketAsset}-${sendingAccount.toHexString()}-${event.params.targetRoundId.toString()}`;
+
+      let futuresOrderEntity = FuturesOrder.load(futuresOrderEntityId);
+
+      if (futuresOrderEntity) {
+        futuresOrderEntity.keeper = event.transaction.from;
+        let tradeEntity = FuturesTrade.load(
+          event.transaction.hash.toHex() + '-' + event.logIndex.minus(BigInt.fromI32(1)).toString(),
+        );
+
+        if (statEntity && tradeEntity) {
+          // if trade exists get the position
+          let positionEntity = FuturesPosition.load(tradeEntity.positionId);
+
+          // update order values
+          futuresOrderEntity.status = 'Filled';
+          tradeEntity.orderType = 'Delayed';
 
           // add fee if not self-executed
           if (futuresOrderEntity.keeper != futuresOrderEntity.account) {
