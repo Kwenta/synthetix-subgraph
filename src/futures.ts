@@ -658,7 +658,7 @@ export function handleDelayedOrderSubmitted(event: DelayedOrderSubmittedEvent): 
         futuresOrderEntity = new FuturesOrder(futuresOrderEntityId);
       }
 
-      futuresOrderEntity.orderType = 'Delayed';
+      futuresOrderEntity.orderType = event.params.isOffchain ? 'DelayedOffchain' : 'Delayed';
       futuresOrderEntity.status = 'Pending';
       futuresOrderEntity.asset = marketAsset;
       futuresOrderEntity.market = futuresMarketAddress;
@@ -704,7 +704,7 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
 
           // update order values
           futuresOrderEntity.status = 'Filled';
-          tradeEntity.orderType = 'Delayed';
+          tradeEntity.orderType = futuresOrderEntity.orderType;
 
           // add fee if not self-executed
           if (futuresOrderEntity.keeper != futuresOrderEntity.account) {

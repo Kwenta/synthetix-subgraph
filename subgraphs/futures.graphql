@@ -126,6 +126,7 @@ enum FuturesOrderType {
   Market
   Liquidation
   Delayed
+  DelayedOffchain
 }
 
 enum FuturesOrderStatus {
