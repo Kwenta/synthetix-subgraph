@@ -1,48 +1,118 @@
 [
   {
+    "anonymous": false,
     "inputs": [
       {
-        "internalType": "address payable",
-        "name": "_proxy",
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
         "type": "address"
       },
       {
-        "internalType": "address",
-        "name": "_marketState",
-        "type": "address"
+        "indexed": false,
+        "internalType": "bool",
+        "name": "isOffchain",
+        "type": "bool"
       },
       {
-        "internalType": "address",
-        "name": "_owner",
-        "type": "address"
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "currentRoundId",
+        "type": "uint256"
       },
       {
-        "internalType": "address",
-        "name": "_resolver",
-        "type": "address"
+        "indexed": false,
+        "internalType": "int256",
+        "name": "sizeDelta",
+        "type": "int256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "targetRoundId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "commitDeposit",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "keeperDeposit",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "trackingCode",
+        "type": "bytes32"
       }
     ],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "constructor"
+    "name": "DelayedOrderRemoved",
+    "type": "event"
   },
   {
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "name",
-        "type": "bytes32"
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
       },
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "destination",
-        "type": "address"
+        "internalType": "bool",
+        "name": "isOffchain",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "int256",
+        "name": "sizeDelta",
+        "type": "int256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "targetRoundId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "intentionTime",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "executableAtTime",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "commitDeposit",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "keeperDeposit",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "trackingCode",
+        "type": "bytes32"
       }
     ],
-    "name": "CacheUpdated",
+    "name": "DelayedOrderSubmitted",
     "type": "event"
   },
   {
@@ -81,6 +151,25 @@
     "inputs": [
       {
         "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "int256",
+        "name": "marginDelta",
+        "type": "int256"
+      }
+    ],
+    "name": "MarginTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
         "internalType": "bytes32",
         "name": "trackingCode",
         "type": "bytes32"
@@ -110,58 +199,7 @@
         "type": "uint256"
       }
     ],
-    "name": "FuturesTracking",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "int256",
-        "name": "marginDelta",
-        "type": "int256"
-      }
-    ],
-    "name": "MarginTransferred",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "oldOwner",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnerChanged",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnerNominated",
+    "name": "PerpsTracking",
     "type": "event"
   },
   {
@@ -263,31 +301,102 @@
     "type": "event"
   },
   {
-    "anonymous": false,
+    "constant": true,
     "inputs": [
       {
-        "indexed": false,
         "internalType": "address",
-        "name": "proxyAddress",
+        "name": "account",
         "type": "address"
       }
     ],
-    "name": "ProxyUpdated",
-    "type": "event"
+    "name": "accessibleMargin",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "marginAccessible",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "invalid",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    "constant": false,
-    "inputs": [],
-    "name": "acceptOwnership",
-    "outputs": [],
+    "constant": true,
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "accruedFunding",
+    "outputs": [
+      {
+        "internalType": "int256",
+        "name": "funding",
+        "type": "int256"
+      },
+      {
+        "internalType": "bool",
+        "name": "invalid",
+        "type": "bool"
+      }
+    ],
     "payable": false,
-    "stateMutability": "nonpayable",
+    "stateMutability": "view",
     "type": "function"
   },
   {
     "constant": true,
     "inputs": [],
-    "name": "isResolverCached",
+    "name": "assetPrice",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "price",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "invalid",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "baseAsset",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "key",
+        "type": "bytes32"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "canLiquidate",
     "outputs": [
       {
         "internalType": "bool",
@@ -300,14 +409,79 @@
     "type": "function"
   },
   {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "cancelDelayedOrder",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "cancelOffchainDelayedOrder",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "priceImpactDelta",
+        "type": "uint256"
+      }
+    ],
+    "name": "closePosition",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "priceImpactDelta",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "trackingCode",
+        "type": "bytes32"
+      }
+    ],
+    "name": "closePositionWithTracking",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "constant": true,
     "inputs": [],
-    "name": "marketState",
+    "name": "currentFundingRate",
     "outputs": [
       {
-        "internalType": "contract IPerpsV2MarketState",
-        "name": "",
-        "type": "address"
+        "internalType": "int256",
+        "name": "fundingRate",
+        "type": "int256"
       }
     ],
     "payable": false,
@@ -317,12 +491,80 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "messageSender",
+    "name": "currentFundingVelocity",
     "outputs": [
       {
+        "internalType": "int256",
+        "name": "fundingVelocity",
+        "type": "int256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
         "internalType": "address",
-        "name": "",
+        "name": "account",
         "type": "address"
+      }
+    ],
+    "name": "delayedOrders",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "isOffchain",
+            "type": "bool"
+          },
+          {
+            "internalType": "int128",
+            "name": "sizeDelta",
+            "type": "int128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "priceImpactDelta",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "targetRoundId",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "commitDeposit",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "keeperDeposit",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint256",
+            "name": "executableAtTime",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "intentionTime",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "trackingCode",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct IPerpsV2MarketConsolidated.DelayedOrder",
+        "name": "",
+        "type": "tuple"
       }
     ],
     "payable": false,
@@ -334,79 +576,66 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_owner",
+        "name": "account",
         "type": "address"
       }
     ],
-    "name": "nominateNewOwner",
+    "name": "executeDelayedOrder",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "nominatedOwner",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "owner",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "proxy",
-    "outputs": [
-      {
-        "internalType": "contract Proxy",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
     "type": "function"
   },
   {
     "constant": false,
-    "inputs": [],
-    "name": "rebuildCache",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "priceUpdateData",
+        "type": "bytes[]"
+      }
+    ],
+    "name": "executeOffchainDelayedOrder",
     "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
+    "payable": true,
+    "stateMutability": "payable",
     "type": "function"
   },
   {
     "constant": true,
     "inputs": [],
-    "name": "resolver",
+    "name": "fundingLastRecomputed",
     "outputs": [
       {
-        "internalType": "contract AddressResolver",
-        "name": "",
-        "type": "address"
+        "internalType": "uint32",
+        "name": "timestamp",
+        "type": "uint32"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
+      }
+    ],
+    "name": "fundingSequence",
+    "outputs": [
+      {
+        "internalType": "int128",
+        "name": "netFunding",
+        "type": "int128"
       }
     ],
     "payable": false,
@@ -416,12 +645,12 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "resolverAddressesRequired",
+    "name": "fundingSequenceLength",
     "outputs": [
       {
-        "internalType": "bytes32[]",
-        "name": "addresses",
-        "type": "bytes32[]"
+        "internalType": "uint256",
+        "name": "length",
+        "type": "uint256"
       }
     ],
     "payable": false,
@@ -431,13 +660,448 @@
   {
     "constant": false,
     "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "liquidatePosition",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "liquidationFee",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "liquidationPrice",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "price",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "invalid",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "marketDebt",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "debt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "isInvalid",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "marketKey",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "key",
+        "type": "bytes32"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "marketSize",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "size",
+        "type": "uint128"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "marketSizes",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "long",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "short",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "marketSkew",
+    "outputs": [
+      {
+        "internalType": "int128",
+        "name": "skew",
+        "type": "int128"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "int256",
+        "name": "sizeDelta",
+        "type": "int256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "priceImpactDelta",
+        "type": "uint256"
+      }
+    ],
+    "name": "modifyPosition",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "int256",
+        "name": "sizeDelta",
+        "type": "int256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "priceImpactDelta",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "trackingCode",
+        "type": "bytes32"
+      }
+    ],
+    "name": "modifyPositionWithTracking",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "notionalValue",
+    "outputs": [
+      {
+        "internalType": "int256",
+        "name": "value",
+        "type": "int256"
+      },
+      {
+        "internalType": "bool",
+        "name": "invalid",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "internalType": "int256",
+        "name": "sizeDelta",
+        "type": "int256"
+      },
+      {
+        "internalType": "enum IPerpsV2MarketBaseTypes.OrderType",
+        "name": "orderType",
+        "type": "uint8"
+      }
+    ],
+    "name": "orderFee",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "fee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "invalid",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "positions",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint64",
+            "name": "id",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "lastFundingIndex",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint128",
+            "name": "margin",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "lastPrice",
+            "type": "uint128"
+          },
+          {
+            "internalType": "int128",
+            "name": "size",
+            "type": "int128"
+          }
+        ],
+        "internalType": "struct IPerpsV2MarketConsolidated.Position",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "internalType": "int256",
+        "name": "sizeDelta",
+        "type": "int256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tradePrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "enum IPerpsV2MarketBaseTypes.OrderType",
+        "name": "orderType",
+        "type": "uint8"
+      },
       {
         "internalType": "address",
         "name": "sender",
         "type": "address"
       }
     ],
-    "name": "setMessageSender",
+    "name": "postTradeDetails",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "margin",
+        "type": "uint256"
+      },
+      {
+        "internalType": "int256",
+        "name": "size",
+        "type": "int256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "price",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "liqPrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "enum IPerpsV2MarketConsolidated.Status",
+        "name": "status",
+        "type": "uint8"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "profitLoss",
+    "outputs": [
+      {
+        "internalType": "int256",
+        "name": "pnl",
+        "type": "int256"
+      },
+      {
+        "internalType": "bool",
+        "name": "invalid",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [],
+    "name": "recomputeFunding",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "lastIndex",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "remainingMargin",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "marginRemaining",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "invalid",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "int256",
+        "name": "sizeDelta",
+        "type": "int256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "priceImpactDelta",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "desiredTimeDelta",
+        "type": "uint256"
+      }
+    ],
+    "name": "submitDelayedOrder",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
@@ -447,119 +1111,119 @@
     "constant": false,
     "inputs": [
       {
-        "internalType": "address payable",
-        "name": "_proxy",
-        "type": "address"
+        "internalType": "int256",
+        "name": "sizeDelta",
+        "type": "int256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "priceImpactDelta",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "desiredTimeDelta",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "trackingCode",
+        "type": "bytes32"
       }
     ],
-    "name": "setProxy",
+    "name": "submitDelayedOrderWithTracking",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
-    "anonymous": false,
+    "constant": false,
     "inputs": [
       {
-        "indexed": true,
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "currentRoundId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
         "internalType": "int256",
         "name": "sizeDelta",
         "type": "int256"
       },
       {
-        "indexed": false,
         "internalType": "uint256",
-        "name": "targetRoundId",
+        "name": "priceImpactDelta",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "commitDeposit",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "keeperDeposit",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "trackingCode",
-        "type": "bytes32"
       }
     ],
-    "name": "DelayedOrderRemoved",
-    "type": "event"
+    "name": "submitOffchainDelayedOrder",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    "anonymous": false,
+    "constant": false,
     "inputs": [
       {
-        "indexed": true,
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "isOffchain",
-        "type": "bool"
-      },
-      {
-        "indexed": false,
         "internalType": "int256",
         "name": "sizeDelta",
         "type": "int256"
       },
       {
-        "indexed": false,
         "internalType": "uint256",
-        "name": "targetRoundId",
+        "name": "priceImpactDelta",
         "type": "uint256"
       },
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "executableAtTime",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "commitDeposit",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "keeperDeposit",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
         "internalType": "bytes32",
         "name": "trackingCode",
         "type": "bytes32"
       }
     ],
-    "name": "DelayedOrderSubmitted",
-    "type": "event"
+    "name": "submitOffchainDelayedOrderWithTracking",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "int256",
+        "name": "marginDelta",
+        "type": "int256"
+      }
+    ],
+    "name": "transferMargin",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "unrecordedFunding",
+    "outputs": [
+      {
+        "internalType": "int256",
+        "name": "funding",
+        "type": "int256"
+      },
+      {
+        "internalType": "bool",
+        "name": "invalid",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [],
+    "name": "withdrawAllMargin",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ]

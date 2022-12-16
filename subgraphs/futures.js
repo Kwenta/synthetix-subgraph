@@ -126,11 +126,11 @@ const perpsMarketTemplate = {
         handler: 'handlePositionLiquidated',
       },
       {
-        event: 'DelayedOrderSubmitted(indexed address,bool,int256,uint256,uint256,uint256,uint256,bytes32)',
+        event: 'DelayedOrderSubmitted(indexed address,bool,int256,uint256,uint256,uint256,uint256,uint256,bytes32)',
         handler: 'handleDelayedOrderSubmitted',
       },
       {
-        event: 'DelayedOrderRemoved(indexed address,uint256,int256,uint256,uint256,uint256,bytes32)',
+        event: 'DelayedOrderRemoved(indexed address,bool,uint256,int256,uint256,uint256,uint256,bytes32)',
         handler: 'handleDelayedOrderRemoved',
       },
     ],
