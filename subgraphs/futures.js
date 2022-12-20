@@ -10,7 +10,7 @@ getContractDeployments('FuturesMarketManager').forEach((a, i) => {
     network: getCurrentNetwork(),
     source: {
       address: a.address,
-      startBlock: a.startBlock,
+      startBlock: 52456507,
       abi: 'FuturesMarketManager',
     },
     mapping: {
@@ -160,35 +160,36 @@ const crossMarginStartBlock =
     ? START_BLOCK_OP_GOERLI
     : 0;
 
-manifest.push({
-  kind: 'ethereum/contract',
-  name: 'crossmargin_factory',
-  network: getCurrentNetwork(),
-  source: {
-    address: crossMarginAddress,
-    startBlock: crossMarginStartBlock,
-    abi: 'MarginAccountFactory',
-  },
-  mapping: {
-    kind: 'ethereum/events',
-    apiVersion: '0.0.5',
-    language: 'wasm/assemblyscript',
-    file: '../src/crossmargin.ts',
-    entities: ['MarginAccountFactory'],
-    abis: [
-      {
-        name: 'MarginAccountFactory',
-        file: '../abis/MarginAccountFactory.json',
-      },
-    ],
-    eventHandlers: [
-      {
-        event: 'NewAccount(indexed address,address)',
-        handler: 'handleNewAccount',
-      },
-    ],
-  },
-});
+// Disable cross margin
+// manifest.push({
+//   kind: 'ethereum/contract',
+//   name: 'crossmargin_factory',
+//   network: getCurrentNetwork(),
+//   source: {
+//     address: crossMarginAddress,
+//     startBlock: crossMarginStartBlock,
+//     abi: 'MarginAccountFactory',
+//   },
+//   mapping: {
+//     kind: 'ethereum/events',
+//     apiVersion: '0.0.5',
+//     language: 'wasm/assemblyscript',
+//     file: '../src/crossmargin.ts',
+//     entities: ['MarginAccountFactory'],
+//     abis: [
+//       {
+//         name: 'MarginAccountFactory',
+//         file: '../abis/MarginAccountFactory.json',
+//       },
+//     ],
+//     eventHandlers: [
+//       {
+//         event: 'NewAccount(indexed address,address)',
+//         handler: 'handleNewAccount',
+//       },
+//     ],
+//   },
+// });
 
 const marginBaseTemplate = {
   kind: 'ethereum/contract',
