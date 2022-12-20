@@ -65,8 +65,8 @@ export function handleMarketAdded(event: MarketAddedEvent): void {
     log.info('New V1 market added: {}', [marketKey]);
 
     // futures v1 market
-    context.setString('market', event.params.market.toHex());
-    FuturesMarket.createWithContext(event.params.market, context);
+    // context.setString('market', event.params.market.toHex());
+    // FuturesMarket.createWithContext(event.params.market, context);
   }
 }
 
