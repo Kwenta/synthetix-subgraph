@@ -30,7 +30,7 @@ import {
   DelayedOrderRemoved as DelayedOrderRemovedEvent,
 } from '../generated/subgraphs/futures/templates/PerpsMarket/PerpsV2MarketProxyable';
 import { FuturesMarket, PerpsMarket } from '../generated/subgraphs/futures/templates';
-import { BPS_CONVERSION, DAY_SECONDS, ETHER, ONE, ONE_HOUR_SECONDS, strToBytes, ZERO } from './lib/helpers';
+import { BPS_CONVERSION, DAY_SECONDS, ETHER, ONE, ONE_HOUR_SECONDS, ZERO } from './lib/helpers';
 
 let SINGLE_INDEX = '0';
 
@@ -40,7 +40,7 @@ let CROSSMARGIN_TRADING_BPS = BigInt.fromI32(2);
 // Timeframes to aggregate stats in seconds
 export const AGG_PERIODS = [ONE_HOUR_SECONDS, DAY_SECONDS];
 
-export function handleMarketAdded(event: MarketAddedEvent): void {
+export function handleV1MarketAdded(event: MarketAddedEvent): void {
   const marketKey = event.params.marketKey.toString();
 
   // create futures market
@@ -55,18 +55,38 @@ export function handleMarketAdded(event: MarketAddedEvent): void {
   marketEntity.save();
 
   let context = new DataSourceContext();
+  // check that it's a v1 market before adding
+  if (marketKey.startsWith('s')) {
+    log.info('New V1 market added: {}', [marketKey]);
+
+    // futures v1 market
+    context.setString('market', event.params.market.toHex());
+    FuturesMarket.createWithContext(event.params.market, context);
+  }
+}
+
+export function handleV2MarketAdded(event: MarketAddedEvent): void {
+  const marketKey = event.params.marketKey.toString();
+
+  // create futures market
+  let marketEntity = new FuturesMarketEntity(event.params.market.toHex());
+  marketEntity.asset = event.params.asset;
+  marketEntity.marketKey = event.params.marketKey;
+
+  // create market cumulative stats
+  let marketStats = getOrCreateMarketCumulativeStats(event.params.marketKey.toHex());
+  marketStats.save();
+  marketEntity.marketStats = marketStats.id;
+  marketEntity.save();
+
+  let context = new DataSourceContext();
+  // Check that it's a v2 market before adding
   if (marketKey.endsWith('PERP')) {
     log.info('New V2 market added: {}', [marketKey]);
 
     // perps v2 market
     context.setString('market', event.params.market.toHex());
     PerpsMarket.createWithContext(event.params.market, context);
-  } else if (marketKey.startsWith('s')) {
-    log.info('New V1 market added: {}', [marketKey]);
-
-    // futures v1 market
-    // context.setString('market', event.params.market.toHex());
-    // FuturesMarket.createWithContext(event.params.market, context);
   }
 }
 

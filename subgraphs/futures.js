@@ -32,7 +32,7 @@ getContractDeployments('FuturesMarketManager').forEach((a, i) => {
       eventHandlers: [
         {
           event: 'MarketAdded(address,indexed bytes32,indexed bytes32)',
-          handler: 'handleMarketAdded',
+          handler: 'handleV1MarketAdded',
         },
         {
           event: 'MarketRemoved(address,indexed bytes32,indexed bytes32)',
@@ -92,51 +92,6 @@ const futuresMarketTemplate = {
   },
 };
 
-// perps v2 markets
-const perpsMarketTemplate = {
-  kind: 'ethereum/contract',
-  name: 'PerpsMarket',
-  network: getCurrentNetwork(),
-  source: {
-    abi: 'PerpsV2MarketProxyable',
-  },
-  mapping: {
-    kind: 'ethereum/events',
-    apiVersion: '0.0.5',
-    language: 'wasm/assemblyscript',
-    file: '../src/futures.ts',
-    entities: ['FuturesMarket', 'FuturesPosition', 'FuturesTrade'],
-    abis: [
-      {
-        name: 'PerpsV2MarketProxyable',
-        file: '../abis/PerpsV2MarketProxyable.json',
-      },
-    ],
-    eventHandlers: [
-      {
-        event: 'MarginTransferred(indexed address,int256)',
-        handler: 'handleMarginTransferred',
-      },
-      {
-        event: 'PositionModified(indexed uint256,indexed address,uint256,int256,int256,uint256,uint256,uint256)',
-        handler: 'handlePositionModified',
-      },
-      {
-        event: 'PositionLiquidated(uint256,address,address,int256,uint256,uint256)',
-        handler: 'handlePositionLiquidated',
-      },
-      {
-        event: 'DelayedOrderSubmitted(indexed address,bool,int256,uint256,uint256,uint256,uint256,uint256,bytes32)',
-        handler: 'handleDelayedOrderSubmitted',
-      },
-      {
-        event: 'DelayedOrderRemoved(indexed address,bool,uint256,int256,uint256,uint256,uint256,bytes32)',
-        handler: 'handleDelayedOrderRemoved',
-      },
-    ],
-  },
-};
-
 // crossmargin
 // addresses
 OP_GOERLI_CROSSMARGIN_ADDRESS = '0x9320170B37eDEb4f41cb6E5A8F82B984aD9c44eE';
@@ -160,36 +115,35 @@ const crossMarginStartBlock =
     ? START_BLOCK_OP_GOERLI
     : 0;
 
-// Disable cross margin
-// manifest.push({
-//   kind: 'ethereum/contract',
-//   name: 'crossmargin_factory',
-//   network: getCurrentNetwork(),
-//   source: {
-//     address: crossMarginAddress,
-//     startBlock: crossMarginStartBlock,
-//     abi: 'MarginAccountFactory',
-//   },
-//   mapping: {
-//     kind: 'ethereum/events',
-//     apiVersion: '0.0.5',
-//     language: 'wasm/assemblyscript',
-//     file: '../src/crossmargin.ts',
-//     entities: ['MarginAccountFactory'],
-//     abis: [
-//       {
-//         name: 'MarginAccountFactory',
-//         file: '../abis/MarginAccountFactory.json',
-//       },
-//     ],
-//     eventHandlers: [
-//       {
-//         event: 'NewAccount(indexed address,address)',
-//         handler: 'handleNewAccount',
-//       },
-//     ],
-//   },
-// });
+manifest.push({
+  kind: 'ethereum/contract',
+  name: 'crossmargin_factory',
+  network: getCurrentNetwork(),
+  source: {
+    address: crossMarginAddress,
+    startBlock: crossMarginStartBlock,
+    abi: 'MarginAccountFactory',
+  },
+  mapping: {
+    kind: 'ethereum/events',
+    apiVersion: '0.0.5',
+    language: 'wasm/assemblyscript',
+    file: '../src/crossmargin.ts',
+    entities: ['MarginAccountFactory'],
+    abis: [
+      {
+        name: 'MarginAccountFactory',
+        file: '../abis/MarginAccountFactory.json',
+      },
+    ],
+    eventHandlers: [
+      {
+        event: 'NewAccount(indexed address,address)',
+        handler: 'handleNewAccount',
+      },
+    ],
+  },
+});
 
 const marginBaseTemplate = {
   kind: 'ethereum/contract',
@@ -230,6 +184,51 @@ const marginBaseTemplate = {
       {
         event: 'Withdraw(indexed address,uint256)',
         handler: 'handleWithdraw',
+      },
+    ],
+  },
+};
+
+// perps v2 markets
+const perpsMarketTemplate = {
+  kind: 'ethereum/contract',
+  name: 'PerpsMarket',
+  network: getCurrentNetwork(),
+  source: {
+    abi: 'PerpsV2MarketProxyable',
+  },
+  mapping: {
+    kind: 'ethereum/events',
+    apiVersion: '0.0.5',
+    language: 'wasm/assemblyscript',
+    file: '../src/futures.ts',
+    entities: ['FuturesMarket', 'FuturesPosition', 'FuturesTrade'],
+    abis: [
+      {
+        name: 'PerpsV2MarketProxyable',
+        file: '../abis/PerpsV2MarketProxyable.json',
+      },
+    ],
+    eventHandlers: [
+      {
+        event: 'MarginTransferred(indexed address,int256)',
+        handler: 'handleMarginTransferred',
+      },
+      {
+        event: 'PositionModified(indexed uint256,indexed address,uint256,int256,int256,uint256,uint256,uint256)',
+        handler: 'handlePositionModified',
+      },
+      {
+        event: 'PositionLiquidated(uint256,address,address,int256,uint256,uint256)',
+        handler: 'handlePositionLiquidated',
+      },
+      {
+        event: 'DelayedOrderSubmitted(indexed address,bool,int256,uint256,uint256,uint256,uint256,uint256,bytes32)',
+        handler: 'handleDelayedOrderSubmitted',
+      },
+      {
+        event: 'DelayedOrderRemoved(indexed address,bool,uint256,int256,uint256,uint256,uint256,bytes32)',
+        handler: 'handleDelayedOrderRemoved',
       },
     ],
   },
