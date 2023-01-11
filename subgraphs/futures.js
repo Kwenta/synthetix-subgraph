@@ -10,7 +10,7 @@ getContractDeployments('FuturesMarketManager').forEach((a, i) => {
     network: getCurrentNetwork(),
     source: {
       address: a.address,
-      startBlock: 52456507,
+      startBlock: a.startBlock,
       abi: 'FuturesMarketManager',
     },
     mapping: {
