@@ -34,9 +34,7 @@ export function handleNewAccount(event: NewAccountEvent): void {
   }
 
   // create a new MarginBase contract for event listeners
-  let context = new DataSourceContext();
-  context.setString('owner', event.params.owner.toHex());
-  MarginBase.createWithContext(cmAccountAddress, context);
+  MarginBase.create(cmAccountAddress);
 }
 
 export function handleOrderPlaced(event: OrderPlacedEvent): void {

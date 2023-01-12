@@ -1,4 +1,4 @@
-import { Address, BigInt, Bytes, DataSourceContext, log, store } from '@graphprotocol/graph-ts';
+import { Address, BigInt, Bytes, log, store } from '@graphprotocol/graph-ts';
 
 import {
   FuturesMarket as FuturesMarketEntity,
@@ -54,14 +54,12 @@ export function handleV1MarketAdded(event: MarketAddedEvent): void {
   marketEntity.marketStats = marketStats.id;
   marketEntity.save();
 
-  let context = new DataSourceContext();
   // check that it's a v1 market before adding
-  if (marketKey.startsWith('s')) {
+  if (marketKey.startsWith('s') && !marketKey.endsWith('PERP')) {
     log.info('New V1 market added: {}', [marketKey]);
 
     // futures v1 market
-    context.setString('market', event.params.market.toHex());
-    FuturesMarket.createWithContext(event.params.market, context);
+    FuturesMarket.create(event.params.market);
   }
 }
 
@@ -79,14 +77,12 @@ export function handleV2MarketAdded(event: MarketAddedEvent): void {
   marketEntity.marketStats = marketStats.id;
   marketEntity.save();
 
-  let context = new DataSourceContext();
   // Check that it's a v2 market before adding
   if (marketKey.endsWith('PERP')) {
     log.info('New V2 market added: {}', [marketKey]);
 
     // perps v2 market
-    context.setString('market', event.params.market.toHex());
-    PerpsMarket.createWithContext(event.params.market, context);
+    PerpsMarket.create(event.params.market);
   }
 }
 
@@ -165,6 +161,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     positionEntity.pnlWithFeesPaid = ZERO;
     positionEntity.netTransfers = ZERO;
     positionEntity.totalDeposits = ZERO;
+    positionEntity.totalVolume = ZERO;
     positionEntity.fundingIndex = event.params.fundingIndex;
   }
 
