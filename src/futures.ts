@@ -30,7 +30,7 @@ import {
   DelayedOrderRemoved as DelayedOrderRemovedEvent,
 } from '../generated/subgraphs/futures/templates/PerpsMarket/PerpsV2MarketProxyable';
 import { FuturesMarket, PerpsMarket } from '../generated/subgraphs/futures/templates';
-import { BPS_CONVERSION, DAY_SECONDS, ETHER, ONE, ONE_HOUR_SECONDS, ZERO } from './lib/helpers';
+import { BPS_CONVERSION, DAY_SECONDS, ETHER, ONE, ONE_HOUR_SECONDS, ZERO, ZERO_ADDRESS } from './lib/helpers';
 
 let SINGLE_INDEX = '0';
 
@@ -171,11 +171,14 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     tradeEntity.account = account;
     tradeEntity.abstractAccount = sendingAccount;
     tradeEntity.accountType = accountType;
-    tradeEntity.size = event.params.tradeSize;
     tradeEntity.margin = event.params.margin.plus(totalFeesPaid);
-    tradeEntity.positionSize = event.params.size;
-    tradeEntity.positionId = positionId;
+    tradeEntity.size = event.params.tradeSize;
+    tradeEntity.asset = ZERO_ADDRESS;
+    tradeEntity.marketKey = ZERO_ADDRESS;
     tradeEntity.price = event.params.lastPrice;
+    tradeEntity.positionId = positionId;
+    tradeEntity.positionSize = event.params.size;
+    tradeEntity.pnl = ZERO;
     tradeEntity.feesPaid = totalFeesPaid;
     tradeEntity.orderType = 'Market';
 
@@ -248,16 +251,17 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
 
       // temporarily set the pnl to the total margin in the account before liquidation
       // we will check this again in the PositionLiquidated event
-      tradeEntity.pnl = positionEntity.margin.times(BigInt.fromI32(-1));
       tradeEntity.margin = ZERO;
-      tradeEntity.positionSize = ZERO;
-      tradeEntity.positionId = positionId;
+      tradeEntity.size = ZERO;
+      tradeEntity.asset = positionEntity.asset;
+      tradeEntity.marketKey = positionEntity.marketKey;
       tradeEntity.price = event.params.lastPrice;
+      tradeEntity.positionId = positionId;
+      tradeEntity.positionSize = ZERO;
+      tradeEntity.positionClosed = true;
+      tradeEntity.pnl = positionEntity.margin.times(BigInt.fromI32(-1));
       tradeEntity.feesPaid = totalFeesPaid;
       tradeEntity.orderType = 'Liquidation';
-      tradeEntity.marketKey = positionEntity.marketKey;
-      tradeEntity.asset = positionEntity.asset;
-      tradeEntity.positionClosed = true;
       tradeEntity.save();
     } else if (marginTransferEntity) {
       // if margin transfer exists, add it to net transfers
@@ -584,17 +588,20 @@ export function handleNextPriceOrderSubmitted(event: NextPriceOrderSubmittedEven
         futuresOrderEntity = new FuturesOrder(futuresOrderEntityId);
       }
 
-      futuresOrderEntity.orderType = 'NextPrice';
-      futuresOrderEntity.status = 'Pending';
+      futuresOrderEntity.size = event.params.sizeDelta;
       futuresOrderEntity.asset = marketAsset;
       futuresOrderEntity.marketKey = marketKey;
       futuresOrderEntity.market = futuresMarketAddress;
       futuresOrderEntity.account = account;
       futuresOrderEntity.abstractAccount = sendingAccount;
-      futuresOrderEntity.size = event.params.sizeDelta;
       futuresOrderEntity.orderId = event.params.targetRoundId;
       futuresOrderEntity.targetRoundId = event.params.targetRoundId;
+      futuresOrderEntity.targetPrice = ZERO;
+      futuresOrderEntity.marginDelta = ZERO;
       futuresOrderEntity.timestamp = event.block.timestamp;
+      futuresOrderEntity.orderType = 'NextPrice';
+      futuresOrderEntity.status = 'Pending';
+      futuresOrderEntity.keeper = ZERO_ADDRESS;
 
       futuresOrderEntity.save();
     }
@@ -679,16 +686,20 @@ export function handleDelayedOrderSubmitted(event: DelayedOrderSubmittedEvent): 
         futuresOrderEntity = new FuturesOrder(futuresOrderEntityId);
       }
 
-      futuresOrderEntity.orderType = event.params.isOffchain ? 'DelayedOffchain' : 'Delayed';
-      futuresOrderEntity.status = 'Pending';
+      futuresOrderEntity.size = event.params.sizeDelta;
       futuresOrderEntity.asset = marketAsset;
+      futuresOrderEntity.marketKey = marketEntity.marketKey;
       futuresOrderEntity.market = futuresMarketAddress;
       futuresOrderEntity.account = account;
       futuresOrderEntity.abstractAccount = sendingAccount;
-      futuresOrderEntity.size = event.params.sizeDelta;
       futuresOrderEntity.orderId = event.params.targetRoundId;
       futuresOrderEntity.targetRoundId = event.params.targetRoundId;
+      futuresOrderEntity.targetPrice = ZERO;
+      futuresOrderEntity.marginDelta = ZERO;
       futuresOrderEntity.timestamp = event.block.timestamp;
+      futuresOrderEntity.orderType = event.params.isOffchain ? 'DelayedOffchain' : 'Delayed';
+      futuresOrderEntity.status = 'Pending';
+      futuresOrderEntity.keeper = ZERO_ADDRESS;
 
       futuresOrderEntity.save();
     }

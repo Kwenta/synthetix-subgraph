@@ -16,8 +16,9 @@ import {
   FuturesTrade,
   CrossMarginAccountTransfer,
 } from '../generated/subgraphs/futures/schema';
-import { BPS_CONVERSION, ETHER, ZERO } from './lib/helpers';
+import { BPS_CONVERSION, ETHER, ZERO, ZERO_ADDRESS } from './lib/helpers';
 import { updateAggregateStatEntities } from './futures';
+import { crossMarginExclusions } from './fragments/exclude';
 
 // temporary cross-margin fee solution
 let CROSSMARGIN_ADVANCED_ORDER_BPS = BigInt.fromI32(3);
@@ -26,8 +27,9 @@ export function handleNewAccount(event: NewAccountEvent): void {
   // create a new entity to store the cross-margin account owner
   const cmAccountAddress = event.params.account as Address;
   let crossMarginAccount = CrossMarginAccount.load(cmAccountAddress.toHex());
+  let isExcluded = crossMarginExclusions.includes(cmAccountAddress.toString());
 
-  if (crossMarginAccount == null) {
+  if (crossMarginAccount == null && !isExcluded) {
     crossMarginAccount = new CrossMarginAccount(cmAccountAddress.toHex());
     crossMarginAccount.owner = event.params.owner;
     crossMarginAccount.save();
@@ -53,18 +55,21 @@ export function handleOrderPlaced(event: OrderPlacedEvent): void {
   }
 
   // fill in the data and save
+  futuresOrderEntity.size = event.params.sizeDelta;
+  futuresOrderEntity.asset = marketKey; // TODO: Deprecase asset from this entity
+  futuresOrderEntity.marketKey = marketKey;
+  futuresOrderEntity.market = ZERO_ADDRESS;
+  futuresOrderEntity.account = account;
+  futuresOrderEntity.abstractAccount = sendingAccount;
+  futuresOrderEntity.orderId = event.params.orderId;
+  futuresOrderEntity.targetRoundId = ZERO;
+  futuresOrderEntity.targetPrice = event.params.targetPrice;
+  futuresOrderEntity.marginDelta = event.params.marginDelta;
+  futuresOrderEntity.timestamp = event.block.timestamp;
   futuresOrderEntity.orderType =
     event.params.orderType === 0 ? 'Limit' : event.params.orderType === 1 ? 'StopMarket' : 'Market';
   futuresOrderEntity.status = 'Pending';
-  futuresOrderEntity.asset = marketKey; // TODO: Deprecase asset from this entity
-  futuresOrderEntity.marketKey = marketKey;
-  futuresOrderEntity.account = account;
-  futuresOrderEntity.abstractAccount = sendingAccount;
-  futuresOrderEntity.size = event.params.sizeDelta;
-  futuresOrderEntity.targetPrice = event.params.targetPrice;
-  futuresOrderEntity.marginDelta = event.params.marginDelta;
-  futuresOrderEntity.orderId = event.params.orderId;
-  futuresOrderEntity.timestamp = event.block.timestamp;
+  futuresOrderEntity.keeper = ZERO_ADDRESS;
 
   futuresOrderEntity.save();
 }
