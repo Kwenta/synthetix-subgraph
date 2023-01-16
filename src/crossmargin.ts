@@ -1,4 +1,4 @@
-import { Address, BigInt, DataSourceContext } from '@graphprotocol/graph-ts';
+import { Address, BigInt, DataSourceContext, log } from '@graphprotocol/graph-ts';
 import { NewAccount as NewAccountEvent } from '../generated/subgraphs/futures/crossmargin_factory/MarginAccountFactory';
 import {
   OrderPlaced as OrderPlacedEvent,
@@ -27,7 +27,11 @@ export function handleNewAccount(event: NewAccountEvent): void {
   // create a new entity to store the cross-margin account owner
   const cmAccountAddress = event.params.account as Address;
   let crossMarginAccount = CrossMarginAccount.load(cmAccountAddress.toHex());
-  let isExcluded = crossMarginExclusions.includes(cmAccountAddress.toString());
+  let isExcluded = crossMarginExclusions.includes(cmAccountAddress.toHexString());
+
+  if (isExcluded) {
+    log.info('Account on exclusion list: {}', [cmAccountAddress.toHexString()]);
+  }
 
   if (crossMarginAccount == null && !isExcluded) {
     crossMarginAccount = new CrossMarginAccount(cmAccountAddress.toHex());
