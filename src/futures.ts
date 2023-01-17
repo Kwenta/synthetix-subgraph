@@ -36,6 +36,7 @@ let SINGLE_INDEX = '0';
 
 // temporary cross-margin fee solution
 let CROSSMARGIN_TRADING_BPS = BigInt.fromI32(2);
+let CROSSMARGIN_ADVANCED_TRADE_BPS = BigInt.fromI32(3);
 
 // Timeframes to aggregate stats in seconds
 export const AGG_PERIODS = [ONE_HOUR_SECONDS, DAY_SECONDS];
@@ -106,13 +107,15 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
 
   // calculated values
   const synthetixFeePaid = event.params.fee;
+  const isAdvancedOrder = accountType === 'cross_margin' && event.transaction.from !== account;
+
   const kwentaFeePaid =
     accountType === 'cross_margin'
       ? event.params.tradeSize
           .abs()
           .times(event.params.lastPrice)
           .div(ETHER)
-          .times(CROSSMARGIN_TRADING_BPS)
+          .times(CROSSMARGIN_TRADING_BPS.plus(isAdvancedOrder ? CROSSMARGIN_ADVANCED_TRADE_BPS : ZERO))
           .div(BPS_CONVERSION)
       : ZERO;
 
