@@ -10,11 +10,11 @@ OP_GOERLI_CROSSMARGIN_ADDRESS = '0x9320170B37eDEb4f41cb6E5A8F82B984aD9c44eE';
 START_BLOCK_OP_MAINNET = 30657407;
 START_BLOCK_OP_GOERLI = 2172242;
 
-GRAFT_BLOCK_OP_MAINNET = 30657407;
-GRAFT_BLOCK_OP_GOERLI = null;
+GRAFT_BLOCK_OP_MAINNET = 65736340;
+GRAFT_BLOCK_OP_GOERLI = 4254066;
 
 GRAFT_BASE_OP_MAINNET = 'QmZydEAXDYbNyRzhbDGdg5D47Wv5R99D2jDyf9fYZrqrXH';
-GRAFT_BASE_OP_GOERLI = null;
+GRAFT_BASE_OP_GOERLI = 'QmbguxdYpf1GKSYdcRjMJuNTtMH7jafbwVa5E3S6mnW8V6';
 
 // calculated variables
 const currentNetwork = getCurrentNetwork();
@@ -186,28 +186,7 @@ const marginBaseTemplate = {
         file: '../abis/MarginBase.json',
       },
     ],
-    eventHandlers: [
-      {
-        event: 'OrderPlaced(indexed address,uint256,bytes32,int256,int256,uint256,uint8)',
-        handler: 'handleOrderPlaced',
-      },
-      {
-        event: 'OrderCancelled(indexed address,uint256)',
-        handler: 'handleOrderCancelled',
-      },
-      {
-        event: 'OrderFilled(indexed address,uint256,uint256,uint256)',
-        handler: 'handleOrderFilled',
-      },
-      {
-        event: 'Deposit(indexed address,uint256)',
-        handler: 'handleDeposit',
-      },
-      {
-        event: 'Withdraw(indexed address,uint256)',
-        handler: 'handleWithdraw',
-      },
-    ],
+    eventHandlers: [],
   },
 };
 
