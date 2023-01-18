@@ -28,7 +28,7 @@ for (const included of includedSubgraphs) {
 }
 
 module.exports = {
-  specVersion: '0.0.2',
+  specVersion: '0.0.4',
   description: 'Kwenta Subgraph',
   repository: 'https://github.com/kwenta/kwenta-subgraph',
   schema: {
