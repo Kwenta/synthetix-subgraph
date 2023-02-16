@@ -2,7 +2,7 @@ const { getCurrentNetwork, getContractDeployments } = require('./utils/network')
 
 const manifest = [];
 
-START_BLOCK_OP_GOERLI = 0;
+START_BLOCK_OP_GOERLI = 3495320;
 START_BLOCK_OP_MAINNET = 52456507;
 
 const currentNetwork = getCurrentNetwork();
@@ -95,6 +95,10 @@ const perpsMarketTemplate = {
       {
         event: 'DelayedOrderRemoved(indexed address,bool,uint256,int256,uint256,uint256,uint256,bytes32)',
         handler: 'handleDelayedOrderRemoved',
+      },
+      {
+        event: 'FundingRecomputed(int256,int256,uint256,uint256)',
+        handler: 'handleFundingRecomputed',
       },
     ],
   },

@@ -117,8 +117,11 @@ type FundingRateUpdate @entity {
   id: ID!
   timestamp: BigInt!
   market: Bytes!
+  marketKey: Bytes!
+  asset: Bytes!
   sequenceLength: BigInt!
   funding: BigInt!
+  fundingRate: BigInt!
 }
 
 enum FuturesOrderType {

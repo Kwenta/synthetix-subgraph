@@ -21,13 +21,13 @@ import {
   PositionLiquidated as PositionLiquidatedEvent,
   PositionModified as PositionModifiedEvent,
   MarginTransferred as MarginTransferredEvent,
-  FundingRecomputed as FundingRecomputedEvent,
   NextPriceOrderSubmitted as NextPriceOrderSubmittedEvent,
   NextPriceOrderRemoved as NextPriceOrderRemovedEvent,
 } from '../generated/subgraphs/futures/templates/FuturesMarket/FuturesMarket';
 import {
   DelayedOrderSubmitted as DelayedOrderSubmittedEvent,
   DelayedOrderRemoved as DelayedOrderRemovedEvent,
+  FundingRecomputed as FundingRecomputedEvent,
 } from '../generated/subgraphs/futures/templates/PerpsMarket/PerpsV2MarketProxyable';
 import { FuturesMarket, PerpsMarket } from '../generated/subgraphs/futures/templates';
 import { BPS_CONVERSION, DAY_SECONDS, ETHER, ONE, ONE_HOUR_SECONDS, ZERO, ZERO_ADDRESS } from './lib/helpers';
@@ -564,6 +564,8 @@ export function handleMarginTransferred(event: MarginTransferredEvent): void {
 
 export function handleFundingRecomputed(event: FundingRecomputedEvent): void {
   let futuresMarketAddress = event.address as Address;
+  let marketEntity = FuturesMarketEntity.load(futuresMarketAddress.toHex());
+
   let fundingRateUpdateEntity = new FundingRateUpdate(
     futuresMarketAddress.toHex() + '-' + event.params.index.toString(),
   );
@@ -571,6 +573,15 @@ export function handleFundingRecomputed(event: FundingRecomputedEvent): void {
   fundingRateUpdateEntity.market = futuresMarketAddress;
   fundingRateUpdateEntity.sequenceLength = event.params.index;
   fundingRateUpdateEntity.funding = event.params.funding;
+  fundingRateUpdateEntity.fundingRate = event.params.fundingRate;
+  fundingRateUpdateEntity.asset = ZERO_ADDRESS;
+  fundingRateUpdateEntity.marketKey = ZERO_ADDRESS;
+
+  if (marketEntity) {
+    fundingRateUpdateEntity.asset = marketEntity.asset;
+    fundingRateUpdateEntity.marketKey = marketEntity.marketKey;
+  }
+
   fundingRateUpdateEntity.save();
 }
 
