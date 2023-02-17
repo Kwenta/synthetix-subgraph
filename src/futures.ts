@@ -197,10 +197,61 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     }
 
     // calculate pnl
-    const newPnl = event.params.lastPrice.minus(positionEntity.lastPrice).times(positionEntity.size).div(ETHER);
+    // update pnl and avg entry
+    // if the position is closed during this transaction...
+    // set the exit price and close the position
+    if (event.params.size.isZero() == true) {
+      // calculate pnl
+      const newPnl = event.params.lastPrice.minus(positionEntity.avgEntryPrice).times(positionEntity.size).div(ETHER);
 
-    // add pnl to this position and the trader's overall stats
-    tradeEntity.pnl = newPnl;
+      // add pnl to this position and the trader's overall stats
+      statEntity.pnl = statEntity.pnl.plus(newPnl);
+      tradeEntity.pnl = newPnl;
+      positionEntity.pnl = positionEntity.pnl.plus(newPnl);
+
+      positionEntity.isOpen = false;
+      positionEntity.exitPrice = event.params.lastPrice;
+      positionEntity.closeTimestamp = event.block.timestamp;
+    } else {
+      // if the position is not closed...
+      // if position changes sides, reset the entry price
+      if (
+        (positionEntity.size.lt(ZERO) && event.params.size.gt(ZERO)) ||
+        (positionEntity.size.gt(ZERO) && event.params.size.lt(ZERO))
+      ) {
+        // calculate pnl
+        const newPnl = event.params.lastPrice.minus(positionEntity.avgEntryPrice).times(positionEntity.size).div(ETHER);
+
+        // add pnl to this position and the trader's overall stats
+        tradeEntity.pnl = newPnl;
+        statEntity.pnl = statEntity.pnl.plus(newPnl);
+        positionEntity.pnl = positionEntity.pnl.plus(newPnl);
+
+        positionEntity.entryPrice = event.params.lastPrice; // Deprecate this after migrating frontend
+        positionEntity.avgEntryPrice = event.params.lastPrice;
+      } else {
+        // check if the position side increases (long or short)
+        if (event.params.size.abs().gt(positionEntity.size.abs())) {
+          // if so, calculate the new average price
+          const existingSize = positionEntity.size.abs();
+          const existingPrice = existingSize.times(positionEntity.entryPrice);
+
+          const newSize = event.params.tradeSize.abs();
+          const newPrice = newSize.times(event.params.lastPrice);
+          positionEntity.entryPrice = existingPrice.plus(newPrice).div(event.params.size.abs()); // Deprecate this after migrating frontend
+          positionEntity.avgEntryPrice = existingPrice.plus(newPrice).div(event.params.size.abs());
+        } else {
+          // if reducing position size, calculate pnl
+          // calculate pnl
+          const newPnl = event.params.lastPrice.minus(positionEntity.avgEntryPrice).times(event.params.size).div(ETHER);
+
+          // add pnl to this position and the trader's overall stats
+          tradeEntity.pnl = newPnl;
+          statEntity.pnl = statEntity.pnl.plus(newPnl);
+          positionEntity.pnl = positionEntity.pnl.plus(newPnl);
+        }
+      }
+    }
     tradeEntity.save();
 
     let volume = tradeEntity.size.times(tradeEntity.price).div(ETHER).abs();
@@ -302,44 +353,6 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
 
       // set the new index
       positionEntity.fundingIndex = event.params.fundingIndex;
-    }
-
-    // calculate pnl
-    const newPnl = event.params.lastPrice.minus(positionEntity.lastPrice).times(positionEntity.size).div(ETHER);
-
-    // add pnl to this position and the trader's overall stats
-    positionEntity.pnl = positionEntity.pnl.plus(newPnl);
-    statEntity.pnl = statEntity.pnl.plus(newPnl);
-  }
-
-  // if the position is closed during this transaction...
-  // set the exit price and close the position
-  if (event.params.size.isZero() == true) {
-    positionEntity.isOpen = false;
-    positionEntity.exitPrice = event.params.lastPrice;
-    positionEntity.closeTimestamp = event.block.timestamp;
-  } else {
-    // if the position is not closed...
-    // if position changes sides, reset the entry price
-    if (
-      (positionEntity.size.lt(ZERO) && event.params.size.gt(ZERO)) ||
-      (positionEntity.size.gt(ZERO) && event.params.size.lt(ZERO))
-    ) {
-      positionEntity.entryPrice = event.params.lastPrice; // Deprecate this after migrating frontend
-      positionEntity.avgEntryPrice = event.params.lastPrice;
-    } else {
-      // check if the position side increases (long or short)
-      if (event.params.size.abs().gt(positionEntity.size.abs())) {
-        // if so, calculate the new average price
-        const existingSize = positionEntity.size.abs();
-        const existingPrice = existingSize.times(positionEntity.entryPrice);
-
-        const newSize = event.params.tradeSize.abs();
-        const newPrice = newSize.times(event.params.lastPrice);
-        positionEntity.entryPrice = existingPrice.plus(newPrice).div(event.params.size.abs()); // Deprecate this after migrating frontend
-        positionEntity.avgEntryPrice = existingPrice.plus(newPrice).div(event.params.size.abs());
-      }
-      // otherwise do nothing
     }
   }
 
