@@ -243,7 +243,11 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
         } else {
           // if reducing position size, calculate pnl
           // calculate pnl
-          const newPnl = event.params.lastPrice.minus(positionEntity.avgEntryPrice).times(event.params.size).div(ETHER);
+          const newPnl = event.params.lastPrice
+            .minus(positionEntity.avgEntryPrice)
+            .times(event.params.tradeSize)
+            .times(event.params.size.gt(ZERO) ? BigInt.fromI32(1) : BigInt.fromI32(-1))
+            .div(ETHER);
 
           // add pnl to this position and the trader's overall stats
           tradeEntity.pnl = newPnl;
@@ -774,12 +778,7 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
         }
 
         tradeEntity.save();
-      } else if (statEntity) {
-        if (futuresOrderEntity.keeper != futuresOrderEntity.account) {
-          statEntity.feesPaid = statEntity.feesPaid.plus(event.params.keeperDeposit);
-          statEntity.save();
-        }
-
+      } else {
         futuresOrderEntity.status = 'Cancelled';
       }
 
