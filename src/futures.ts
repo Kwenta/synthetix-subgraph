@@ -245,7 +245,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
           // calculate pnl
           const newPnl = event.params.lastPrice
             .minus(positionEntity.avgEntryPrice)
-            .times(event.params.tradeSize)
+            .times(event.params.tradeSize.abs())
             .times(event.params.size.gt(ZERO) ? BigInt.fromI32(1) : BigInt.fromI32(-1))
             .div(ETHER);
 
@@ -397,27 +397,37 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
   );
 
   let statEntity = FuturesStat.load(account.toHex());
-  if (statEntity && statEntity.liquidations) {
-    statEntity.liquidations = statEntity.liquidations.plus(BigInt.fromI32(1));
-    statEntity.save();
-  }
   if (positionEntity) {
     // update position
     positionEntity.isLiquidated = true;
+    positionEntity.isOpen = false;
+    positionEntity.closeTimestamp = event.block.timestamp;
     positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.fee);
     positionEntity.pnlWithFeesPaid = positionEntity.initialMargin
       .plus(positionEntity.netTransfers)
       .times(BigInt.fromI32(-1));
-    positionEntity.pnl = positionEntity.pnlWithFeesPaid.plus(positionEntity.feesPaid).minus(positionEntity.netFunding);
-    positionEntity.save();
-  }
 
-  if (tradeEntity) {
-    tradeEntity.size = event.params.size.times(BigInt.fromI32(-1));
-    tradeEntity.positionSize = ZERO;
-    tradeEntity.feesPaid = tradeEntity.feesPaid.plus(event.params.fee);
-    tradeEntity.pnl = tradeEntity.pnl.plus(event.params.fee);
-    tradeEntity.save();
+    // recalculate pnl to ensure a 100% position loss
+    // this calculation is required since the liquidation price could result in pnl slightly above/below 100%
+    const newPnl = positionEntity.pnlWithFeesPaid.plus(positionEntity.feesPaid).minus(positionEntity.netFunding);
+
+    if (statEntity) {
+      statEntity.liquidations = statEntity.liquidations.plus(BigInt.fromI32(1));
+      statEntity.pnl = statEntity.pnl.minus(positionEntity.pnl).plus(newPnl);
+      statEntity.pnlWithFeesPaid = statEntity.pnl.minus(statEntity.feesPaid);
+      statEntity.save();
+    }
+
+    positionEntity.pnl = newPnl;
+    positionEntity.save();
+
+    if (tradeEntity) {
+      tradeEntity.size = event.params.size.times(BigInt.fromI32(-1));
+      tradeEntity.positionSize = ZERO;
+      tradeEntity.feesPaid = tradeEntity.feesPaid.plus(event.params.fee);
+      tradeEntity.pnl = tradeEntity.pnl.plus(event.params.fee);
+      tradeEntity.save();
+    }
   }
 
   let cumulativeEntity = getOrCreateCumulativeEntity();
