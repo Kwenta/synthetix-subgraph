@@ -181,6 +181,12 @@ type CrossMarginAccount @entity {
   owner: Bytes!
 }
 
+type SmartMarginAccount @entity {
+  id: ID!
+  owner: Bytes!
+  version: Bytes!
+}
+
 type CrossMarginAccountTransfer @entity {
   id: ID!
   account: Bytes!
