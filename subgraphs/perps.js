@@ -23,7 +23,6 @@ const testnetConfig = {
 
 const config = currentNetwork === 'optimism' ? mainnetConfig : testnetConfig;
 
-console.log(config);
 // futures market manager
 getContractDeployments('FuturesMarketManager').forEach((a, i) => {
   manifest.push({
