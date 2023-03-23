@@ -636,7 +636,7 @@ export function handleDelayedOrderSubmitted(event: DelayedOrderSubmittedEvent): 
   if (marketEntity) {
     let marketAsset = marketEntity.asset;
 
-    const futuresOrderEntityId = `NP-${marketAsset}-${sendingAccount.toHexString()}-${event.params.targetRoundId.toString()}`;
+    const futuresOrderEntityId = `D-${marketAsset}-${sendingAccount.toHexString()}-${event.params.targetRoundId.toString()}`;
 
     let futuresOrderEntity = FuturesOrder.load(futuresOrderEntityId);
     if (futuresOrderEntity == null) {
@@ -644,16 +644,13 @@ export function handleDelayedOrderSubmitted(event: DelayedOrderSubmittedEvent): 
     }
 
     futuresOrderEntity.size = event.params.sizeDelta;
-    futuresOrderEntity.asset = marketAsset;
     futuresOrderEntity.marketKey = marketEntity.marketKey;
-    futuresOrderEntity.market = futuresMarketAddress;
     futuresOrderEntity.account = account;
     futuresOrderEntity.abstractAccount = sendingAccount;
-    futuresOrderEntity.orderId = event.params.targetRoundId;
-    futuresOrderEntity.targetRoundId = event.params.targetRoundId;
     futuresOrderEntity.targetPrice = ZERO;
     futuresOrderEntity.marginDelta = ZERO;
     futuresOrderEntity.timestamp = event.block.timestamp;
+    futuresOrderEntity.orderId = event.params.targetRoundId;
     futuresOrderEntity.orderType = event.params.isOffchain ? 'DelayedOffchain' : 'Delayed';
     futuresOrderEntity.status = 'Pending';
     futuresOrderEntity.keeper = ZERO_ADDRESS;
@@ -676,7 +673,7 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
   if (marketEntity) {
     let marketAsset = marketEntity.asset;
 
-    const futuresOrderEntityId = `NP-${marketAsset}-${sendingAccount.toHexString()}-${event.params.targetRoundId.toString()}`;
+    const futuresOrderEntityId = `D-${marketAsset}-${sendingAccount.toHexString()}-${event.params.targetRoundId.toString()}`;
 
     let futuresOrderEntity = FuturesOrder.load(futuresOrderEntityId);
 

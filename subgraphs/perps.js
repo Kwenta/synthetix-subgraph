@@ -175,6 +175,18 @@ manifest.push({
         event: 'Withdraw(indexed address,indexed address,uint256)',
         handler: 'handleWithdraw',
       },
+      {
+        event: 'ConditionalOrderPlaced(indexed address,uint256,bytes32,int256,int256,uint256,uint8,uint128,bool)',
+        handler: 'handleOrderPlaced',
+      },
+      {
+        event: 'ConditionalOrderCancelled(indexed address,uint256,uint8)',
+        handler: 'handleOrderCancelled',
+      },
+      {
+        event: 'ConditionalOrderFilled(indexed address,uint256,uint256,uint256)',
+        handler: 'handleOrderFilled',
+      },
     ],
   },
 });

@@ -161,13 +161,10 @@ enum FuturesAccountType {
 type FuturesOrder @entity {
   id: ID!
   size: BigInt!
-  asset: Bytes!
   marketKey: Bytes!
-  market: Bytes!
   account: Bytes!
   abstractAccount: Bytes!
   orderId: BigInt!
-  targetRoundId: BigInt!
   targetPrice: BigInt!
   marginDelta: BigInt!
   timestamp: BigInt!
