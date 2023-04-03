@@ -7,12 +7,7 @@ import {
   ConditionalOrderFilled as ConditionalOrderFilledEvent,
   ConditionalOrderCancelled as ConditionalOrderCancelledEvent,
 } from '../generated/subgraphs/perps/smartmargin_events/Events';
-import {
-  FuturesOrder,
-  FuturesTrade,
-  SmartMarginAccount,
-  SmartMarginAccountTransfer,
-} from '../generated/subgraphs/perps/schema';
+import { FuturesOrder, SmartMarginAccount, SmartMarginAccountTransfer } from '../generated/subgraphs/perps/schema';
 import { ZERO_ADDRESS } from './lib/helpers';
 
 export function handleNewAccount(event: NewAccountEvent): void {
@@ -86,6 +81,7 @@ export function handleOrderPlaced(event: ConditionalOrderPlacedEvent): void {
   futuresOrderEntity.targetPrice = event.params.targetPrice;
   futuresOrderEntity.marginDelta = event.params.marginDelta;
   futuresOrderEntity.timestamp = event.block.timestamp;
+  futuresOrderEntity.txnHash = event.transaction.hash;
   futuresOrderEntity.orderType =
     event.params.conditionalOrderType === 0
       ? 'Limit'
@@ -109,59 +105,58 @@ export function handleOrderFilled(event: ConditionalOrderFilledEvent): void {
     futuresOrderEntity.timestamp = event.block.timestamp;
     futuresOrderEntity.save();
 
-    // update the trade type
-    // need to iterate through logs to find the most recent trade
-    const maxLogIndex = event.logIndex;
-    for (let inc = maxLogIndex.toI32(); inc >= 0; inc--) {
-      const futuresTradeEntityId = `${event.transaction.hash.toHex()}-${inc}`;
-      let tradeEntity = FuturesTrade.load(futuresTradeEntityId);
-      if (tradeEntity) {
-        tradeEntity.orderType = futuresOrderEntity.orderType;
-        tradeEntity.save();
-      }
+    //   // TODO: Figure out how to add fees
+    //   // TODO: update the trade type
+    //   const maxLogIndex = event.logIndex;
+    //   for (let inc = maxLogIndex.toI32(); inc >= 0; inc--) {
+    //     const futuresTradeEntityId = `${event.transaction.hash.toHex()}-${inc}`;
+    //     let tradeEntity = FuturesTrade.load(futuresTradeEntityId);
+    //     if (tradeEntity) {
+    //       tradeEntity.orderType = futuresOrderEntity.orderType;
+    //       tradeEntity.save();
+    //     }
 
-      // TODO: Figure out how to add fees
-      // const positionEntityId = tradeEntity ? tradeEntity.positionId : '';
-      // let positionEntity = FuturesPosition.load(positionEntityId);
-      // let statEntity = FuturesStat.load(futuresOrderEntity.account.toHex());
+    //     const positionEntityId = tradeEntity ? tradeEntity.positionId : '';
+    //     let positionEntity = FuturesPosition.load(positionEntityId);
+    //     let statEntity = FuturesStat.load(futuresOrderEntity.account.toHex());
 
-      // if (tradeEntity && positionEntity && statEntity) {
-      //   tradeEntity.orderType = futuresOrderEntity.orderType;
+    //     if (tradeEntity && positionEntity && statEntity) {
+    //       tradeEntity.orderType = futuresOrderEntity.orderType;
 
-      //   update fees and pnl
-      //   const feePaid = tradeEntity.size
-      //     .abs()
-      //     .times(tradeEntity.price)
-      //     .div(ETHER)
-      //     .times(CROSSMARGIN_ADVANCED_ORDER_BPS)
-      //     .div(BPS_CONVERSION);
-      //   tradeEntity.feesPaid = tradeEntity.feesPaid.plus(feePaid);
+    //       update fees and pnl
+    //       const feePaid = tradeEntity.size
+    //         .abs()
+    //         .times(tradeEntity.price)
+    //         .div(ETHER)
+    //         .times(CROSSMARGIN_ADVANCED_ORDER_BPS)
+    //         .div(BPS_CONVERSION);
+    //       tradeEntity.feesPaid = tradeEntity.feesPaid.plus(feePaid);
 
-      //   updateAggregateStatEntities(
-      //     'cross_margin',
-      //     positionEntity.marketKey,
-      //     positionEntity.asset,
-      //     event.block.timestamp,
-      //     ZERO,
-      //     ZERO,
-      //     ZERO,
-      //     feePaid,
-      //   );
+    //       updateAggregateStatEntities(
+    //         'cross_margin',
+    //         positionEntity.marketKey,
+    //         positionEntity.asset,
+    //         event.block.timestamp,
+    //         ZERO,
+    //         ZERO,
+    //         ZERO,
+    //         feePaid,
+    //       );
 
-      //   positionEntity.feesPaid = positionEntity.feesPaid.plus(feePaid);
-      //   positionEntity.pnlWithFeesPaid = positionEntity.pnl
-      //     .minus(positionEntity.feesPaid)
-      //     .plus(positionEntity.netFunding);
+    //       positionEntity.feesPaid = positionEntity.feesPaid.plus(feePaid);
+    //       positionEntity.pnlWithFeesPaid = positionEntity.pnl
+    //         .minus(positionEntity.feesPaid)
+    //         .plus(positionEntity.netFunding);
 
-      //   statEntity.feesPaid = statEntity.feesPaid.plus(feePaid);
-      //   statEntity.pnlWithFeesPaid = statEntity.pnl.minus(statEntity.feesPaid);
+    //       statEntity.feesPaid = statEntity.feesPaid.plus(feePaid);
+    //       statEntity.pnlWithFeesPaid = statEntity.pnl.minus(statEntity.feesPaid);
 
-      //   tradeEntity.save();
-      //   positionEntity.save();
-      //   statEntity.save();
-      //   break;
-      // }
-    }
+    //       tradeEntity.save();
+    //       positionEntity.save();
+    //       statEntity.save();
+    //       break;
+    //     }
+    //   }
   }
 }
 

@@ -163,6 +163,7 @@ type FuturesOrder @entity {
   size: BigInt!
   marketKey: Bytes!
   account: Bytes!
+  txnHash: Bytes!
   abstractAccount: Bytes!
   orderId: BigInt!
   targetPrice: BigInt!
