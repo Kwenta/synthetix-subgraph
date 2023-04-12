@@ -192,8 +192,12 @@ manifest.push({
         handler: 'handleOrderCancelled',
       },
       {
-        event: 'ConditionalOrderFilled(indexed address,uint256,uint256,uint256)',
+        event: 'ConditionalOrderFilled(indexed address,uint256,uint256,uint256,uint256)',
         handler: 'handleOrderFilled',
+      },
+      {
+        event: 'FeeImposed(address,uint256,bytes32,bytes32)',
+        handler: 'handleFeeImposed',
       },
     ],
   },

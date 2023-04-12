@@ -189,6 +189,13 @@ type SmartMarginAccountTransfer @entity {
   txHash: String!
 }
 
+type SmartMarginFeesAccrued @entity {
+  id: ID!
+  account: Bytes!
+  marketKey: Bytes!
+  feesPaid: BigInt!
+}
+
 # Deprecated
 type CrossMarginAccountTransfer @entity {
   id: ID!

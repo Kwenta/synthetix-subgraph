@@ -1,5 +1,21 @@
 [
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_factory",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "OnlyAccounts",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -49,6 +65,12 @@
         "indexed": false,
         "internalType": "uint256",
         "name": "keeperFee",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "kwentaFee",
         "type": "uint256"
       }
     ],
@@ -170,7 +192,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
         "name": "account",
         "type": "address"
@@ -180,6 +202,18 @@
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "marketKey",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "reason",
+        "type": "bytes32"
       }
     ],
     "name": "FeeImposed",
@@ -253,6 +287,11 @@
       {
         "internalType": "uint256",
         "name": "keeperFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "kwentaFee",
         "type": "uint256"
       }
     ],
@@ -371,6 +410,16 @@
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "marketKey",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "reason",
+        "type": "bytes32"
       }
     ],
     "name": "emitFeeImposed",
@@ -399,6 +448,19 @@
     "name": "emitWithdraw",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "factory",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   }
 ]

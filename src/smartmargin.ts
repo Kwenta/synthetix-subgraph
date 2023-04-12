@@ -1,4 +1,4 @@
-import { Address } from '@graphprotocol/graph-ts';
+import { Address, Bytes } from '@graphprotocol/graph-ts';
 import { NewAccount as NewAccountEvent } from '../generated/subgraphs/perps/smartmargin_factory/Factory';
 import {
   Deposit as DepositEvent,
@@ -6,9 +6,15 @@ import {
   ConditionalOrderPlaced as ConditionalOrderPlacedEvent,
   ConditionalOrderFilled as ConditionalOrderFilledEvent,
   ConditionalOrderCancelled as ConditionalOrderCancelledEvent,
+  FeeImposed as FeeImposedEvent,
 } from '../generated/subgraphs/perps/smartmargin_events/Events';
-import { FuturesOrder, SmartMarginAccount, SmartMarginAccountTransfer } from '../generated/subgraphs/perps/schema';
-import { ZERO_ADDRESS } from './lib/helpers';
+import {
+  FuturesOrder,
+  SmartMarginAccount,
+  SmartMarginAccountTransfer,
+  SmartMarginFeesAccrued,
+} from '../generated/subgraphs/perps/schema';
+import { ZERO, ZERO_ADDRESS } from './lib/helpers';
 
 export function handleNewAccount(event: NewAccountEvent): void {
   // create a new entity to store the cross-margin account owner
@@ -172,4 +178,22 @@ export function handleOrderCancelled(event: ConditionalOrderCancelledEvent): voi
     futuresOrderEntity.timestamp = event.block.timestamp;
     futuresOrderEntity.save();
   }
+}
+
+export function handleFeeImposed(event: FeeImposedEvent): void {
+  const feeEntity = getOrCreateSmartMarginFeesAccrued(event.params.account, event.params.marketKey);
+  feeEntity.feesPaid = feeEntity.feesPaid.plus(event.params.amount);
+  feeEntity.save();
+}
+
+function getOrCreateSmartMarginFeesAccrued(account: Address, marketKey: Bytes): SmartMarginFeesAccrued {
+  const feeEntityId = account.toHex() + '-' + marketKey.toString();
+  let feeEntity = SmartMarginFeesAccrued.load(feeEntityId);
+  if (feeEntity == null) {
+    feeEntity = new SmartMarginFeesAccrued(feeEntityId);
+    feeEntity.account = account;
+    feeEntity.marketKey = marketKey;
+    feeEntity.feesPaid = ZERO;
+  }
+  return feeEntity;
 }
