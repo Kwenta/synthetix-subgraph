@@ -13,14 +13,14 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: '14'
+          node-version: '16'
           registry-url: 'https://registry.npmjs.org'
       - name: Set npm cache directory
         run: npm config set cache .npm-cache --global
         continue-on-error: true
 
       - name: Cache node modules
-        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # pin@v2
+        uses: actions/cache@v3
         with:
           path: |
             .npm-cache
