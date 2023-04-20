@@ -66,12 +66,6 @@
         "internalType": "uint256",
         "name": "keeperFee",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "kwentaFee",
-        "type": "uint256"
       }
     ],
     "name": "ConditionalOrderFilled",
@@ -124,9 +118,9 @@
       },
       {
         "indexed": false,
-        "internalType": "uint128",
-        "name": "priceImpactDelta",
-        "type": "uint128"
+        "internalType": "uint256",
+        "name": "desiredFillPrice",
+        "type": "uint256"
       },
       {
         "indexed": false,
@@ -192,37 +186,6 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "marketKey",
-        "type": "bytes32"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "reason",
-        "type": "bytes32"
-      }
-    ],
-    "name": "FeeImposed",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
         "indexed": true,
         "internalType": "address",
         "name": "user",
@@ -247,11 +210,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
         "internalType": "uint256",
         "name": "conditionalOrderId",
         "type": "uint256"
@@ -270,11 +228,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
         "internalType": "uint256",
         "name": "conditionalOrderId",
         "type": "uint256"
@@ -288,11 +241,6 @@
         "internalType": "uint256",
         "name": "keeperFee",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "kwentaFee",
-        "type": "uint256"
       }
     ],
     "name": "emitConditionalOrderFilled",
@@ -302,11 +250,6 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
       {
         "internalType": "uint256",
         "name": "conditionalOrderId",
@@ -338,9 +281,9 @@
         "type": "uint8"
       },
       {
-        "internalType": "uint128",
-        "name": "priceImpactDelta",
-        "type": "uint128"
+        "internalType": "uint256",
+        "name": "desiredFillPrice",
+        "type": "uint256"
       },
       {
         "internalType": "bool",
@@ -358,11 +301,6 @@
       {
         "internalType": "address",
         "name": "user",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "account",
         "type": "address"
       },
       {
@@ -384,11 +322,6 @@
         "type": "address"
       },
       {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
@@ -403,40 +336,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "marketKey",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "reason",
-        "type": "bytes32"
-      }
-    ],
-    "name": "emitFeeImposed",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
         "name": "user",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "account",
         "type": "address"
       },
       {

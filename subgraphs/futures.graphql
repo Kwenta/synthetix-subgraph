@@ -189,10 +189,12 @@ type SmartMarginAccountTransfer @entity {
   txHash: String!
 }
 
-type SmartMarginFeesAccrued @entity {
+type SmartMarginOrder @entity {
   id: ID!
   account: Bytes!
+  orderType: FuturesOrderType!
   marketKey: Bytes!
+  recordTrade: Boolean!
   feesPaid: BigInt!
 }
 

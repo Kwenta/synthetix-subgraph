@@ -6,13 +6,12 @@ import {
   ConditionalOrderPlaced as ConditionalOrderPlacedEvent,
   ConditionalOrderFilled as ConditionalOrderFilledEvent,
   ConditionalOrderCancelled as ConditionalOrderCancelledEvent,
-  FeeImposed as FeeImposedEvent,
 } from '../generated/subgraphs/perps/smartmargin_events/Events';
 import {
   FuturesOrder,
   SmartMarginAccount,
   SmartMarginAccountTransfer,
-  SmartMarginFeesAccrued,
+  SmartMarginOrder,
 } from '../generated/subgraphs/perps/schema';
 import { ZERO, ZERO_ADDRESS } from './lib/helpers';
 
@@ -109,60 +108,13 @@ export function handleOrderFilled(event: ConditionalOrderFilledEvent): void {
     // update the order status
     futuresOrderEntity.status = 'Filled';
     futuresOrderEntity.timestamp = event.block.timestamp;
+
+    const smartMarginOrder = getOrCreateSmartMarginOrder(smAccountAddress, futuresOrderEntity.marketKey);
+    smartMarginOrder.orderType = futuresOrderEntity.orderType;
+    smartMarginOrder.recordTrade = true;
+
     futuresOrderEntity.save();
-
-    //   // TODO: Figure out how to add fees
-    //   // TODO: update the trade type
-    //   const maxLogIndex = event.logIndex;
-    //   for (let inc = maxLogIndex.toI32(); inc >= 0; inc--) {
-    //     const futuresTradeEntityId = `${event.transaction.hash.toHex()}-${inc}`;
-    //     let tradeEntity = FuturesTrade.load(futuresTradeEntityId);
-    //     if (tradeEntity) {
-    //       tradeEntity.orderType = futuresOrderEntity.orderType;
-    //       tradeEntity.save();
-    //     }
-
-    //     const positionEntityId = tradeEntity ? tradeEntity.positionId : '';
-    //     let positionEntity = FuturesPosition.load(positionEntityId);
-    //     let statEntity = FuturesStat.load(futuresOrderEntity.account.toHex());
-
-    //     if (tradeEntity && positionEntity && statEntity) {
-    //       tradeEntity.orderType = futuresOrderEntity.orderType;
-
-    //       update fees and pnl
-    //       const feePaid = tradeEntity.size
-    //         .abs()
-    //         .times(tradeEntity.price)
-    //         .div(ETHER)
-    //         .times(CROSSMARGIN_ADVANCED_ORDER_BPS)
-    //         .div(BPS_CONVERSION);
-    //       tradeEntity.feesPaid = tradeEntity.feesPaid.plus(feePaid);
-
-    //       updateAggregateStatEntities(
-    //         'cross_margin',
-    //         positionEntity.marketKey,
-    //         positionEntity.asset,
-    //         event.block.timestamp,
-    //         ZERO,
-    //         ZERO,
-    //         ZERO,
-    //         feePaid,
-    //       );
-
-    //       positionEntity.feesPaid = positionEntity.feesPaid.plus(feePaid);
-    //       positionEntity.pnlWithFeesPaid = positionEntity.pnl
-    //         .minus(positionEntity.feesPaid)
-    //         .plus(positionEntity.netFunding);
-
-    //       statEntity.feesPaid = statEntity.feesPaid.plus(feePaid);
-    //       statEntity.pnlWithFeesPaid = statEntity.pnl.minus(statEntity.feesPaid);
-
-    //       tradeEntity.save();
-    //       positionEntity.save();
-    //       statEntity.save();
-    //       break;
-    //     }
-    //   }
+    smartMarginOrder.save();
   }
 }
 
@@ -180,20 +132,15 @@ export function handleOrderCancelled(event: ConditionalOrderCancelledEvent): voi
   }
 }
 
-export function handleFeeImposed(event: FeeImposedEvent): void {
-  const feeEntity = getOrCreateSmartMarginFeesAccrued(event.params.account, event.params.marketKey);
-  feeEntity.feesPaid = feeEntity.feesPaid.plus(event.params.amount);
-  feeEntity.save();
-}
-
-function getOrCreateSmartMarginFeesAccrued(account: Address, marketKey: Bytes): SmartMarginFeesAccrued {
-  const feeEntityId = account.toHex() + '-' + marketKey.toString();
-  let feeEntity = SmartMarginFeesAccrued.load(feeEntityId);
-  if (feeEntity == null) {
-    feeEntity = new SmartMarginFeesAccrued(feeEntityId);
-    feeEntity.account = account;
-    feeEntity.marketKey = marketKey;
-    feeEntity.feesPaid = ZERO;
+function getOrCreateSmartMarginOrder(account: Address, marketKey: Bytes): SmartMarginOrder {
+  const smOrderEntityId = account.toHex() + '-' + marketKey.toString();
+  let smartMarginOrderEntity = SmartMarginOrder.load(smOrderEntityId);
+  if (smartMarginOrderEntity == null) {
+    smartMarginOrderEntity = new SmartMarginOrder(smOrderEntityId);
+    smartMarginOrderEntity.account = account;
+    smartMarginOrderEntity.recordTrade = false;
+    smartMarginOrderEntity.marketKey = marketKey;
+    smartMarginOrderEntity.feesPaid = ZERO;
   }
-  return feeEntity;
+  return smartMarginOrderEntity;
 }
