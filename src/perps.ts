@@ -301,7 +301,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
 
     // update cumulative and aggregate stats
     // aggregate stats are created for various time periods
-    if (marketEntity && marketEntity.asset) {
+    if (marketEntity && marketEntity.asset && event.params.trackingCode.toString() == 'KWENTA') {
       let marketCumulativeStats = getOrCreateMarketCumulativeStats(marketEntity.asset.toHex());
       marketCumulativeStats.totalTrades = marketCumulativeStats.totalTrades.plus(BigInt.fromI32(1));
       marketCumulativeStats.totalVolume = marketCumulativeStats.totalVolume.plus(volume);
