@@ -408,7 +408,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
 }
 
 export function handlePerpsTracking(event: PerpsTrackingEvent): void {
-  // Only save the tracking code if it's KWENTA
+  // Only save PerpsTracking entity code if it's KWENTA
   if (event.params.trackingCode.toString() == 'KWENTA') {
     const perpsTrackingEntity = new PerpsTracking(
       event.transaction.hash.toHex() + '-' + event.block.timestamp.toString(),
