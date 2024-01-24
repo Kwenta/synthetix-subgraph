@@ -27,6 +27,7 @@ import {
   ETHER,
   FUNDING_RATE_PERIODS,
   FUNDING_RATE_PERIOD_TYPES,
+  ONE,
   ONE_HOUR_SECONDS,
   ZERO,
   getTimeID,
@@ -176,7 +177,13 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     positionEntity.pnlWithFeesPaid = ZERO;
     positionEntity.totalVolume = volume;
 
-    updateAggregateStatEntities(positionEntity.marketId, positionEntity.marketSymbol, event.block.timestamp, volume);
+    updateAggregateStatEntities(
+      positionEntity.marketId,
+      positionEntity.marketSymbol,
+      event.block.timestamp,
+      ONE,
+      volume,
+    );
 
     statEntity.feesPaid = statEntity.feesPaid.plus(event.params.totalFees);
     statEntity.totalTrades = statEntity.totalTrades.plus(BigInt.fromI32(1));
@@ -222,7 +229,13 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     positionEntity.netFunding = positionEntity.netFunding.plus(event.params.accruedFunding);
     positionEntity.size = positionEntity.size.plus(event.params.sizeDelta);
 
-    updateAggregateStatEntities(positionEntity.marketId, positionEntity.marketSymbol, event.block.timestamp, volume);
+    updateAggregateStatEntities(
+      positionEntity.marketId,
+      positionEntity.marketSymbol,
+      event.block.timestamp,
+      ONE,
+      volume,
+    );
 
     statEntity.feesPaid = statEntity.feesPaid.plus(event.params.totalFees).minus(event.params.accruedFunding);
 
@@ -401,6 +414,7 @@ function getOrCreateMarketAggregateStats(
     aggregateEntity.timestamp = timestamp;
     aggregateEntity.marketId = marketId;
     aggregateEntity.marketSymbol = marketSymbol;
+    aggregateEntity.trades = ZERO;
     aggregateEntity.volume = ZERO;
   }
   return aggregateEntity as PerpsV3AggregateStat;
@@ -410,6 +424,7 @@ export function updateAggregateStatEntities(
   marketId: BigInt,
   marketSymbol: string,
   timestamp: BigInt,
+  trades: BigInt,
   volume: BigInt,
 ): void {
   // this function updates the aggregate stat entities for the specified account and market
@@ -422,6 +437,7 @@ export function updateAggregateStatEntities(
 
     // update the aggregate for this market
     let aggStats = getOrCreateMarketAggregateStats(marketId, marketSymbol, aggTimestamp, thisPeriod);
+    aggStats.trades = aggStats.trades.plus(trades);
     aggStats.volume = aggStats.volume.plus(volume);
     aggStats.save();
   }
