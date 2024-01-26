@@ -71,8 +71,9 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
 
   let account = Account.load(event.params.accountId.toString());
 
-  if (account == null) {
-    account = new Account(event.params.accountId.toString());
+  if (account === null) {
+    log.error('Account not found for accountId: {}', [event.params.accountId.toString()]);
+    return;
   }
 
   let statEntity = PerpsV3Stat.load(account.owner.toHex());
@@ -126,8 +127,9 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
   let volume = order.sizeDelta.abs().times(order.fillPrice).div(ETHER).abs();
   let account = Account.load(order.account);
 
-  if (account == null) {
-    account = new Account(order.account);
+  if (account === null) {
+    log.error('Account not found for accountId: {}', [order.account.toString()]);
+    return;
   }
 
   let statEntity = PerpsV3Stat.load(account.owner.toHex());
