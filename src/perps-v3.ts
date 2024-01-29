@@ -5,7 +5,9 @@ import {
   FundingRatePeriod,
   FundingRateUpdate,
   OpenPerpsV3Position,
+  OrderCommitted,
   OrderSettled,
+  PendingOrder,
   PerpsV3AggregateStat,
   PerpsV3Market,
   PerpsV3Position,
@@ -19,6 +21,7 @@ import {
   PermissionGranted as PermissionGrantedEvent,
   PermissionRevoked as PermissionRevokedEvent,
   CollateralModified as CollateralModifiedEvent,
+  OrderCommitted as OrderCommittedEvent,
 } from '../generated/subgraphs/perps-v3/PerpsV3/PerpsV3MarketProxy';
 import { BigInt, log, store } from '@graphprotocol/graph-ts';
 import {
@@ -86,6 +89,16 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
 export function handleOrderSettled(event: OrderSettledEvent): void {
   const orderId = event.params.accountId.toString() + '-' + event.block.timestamp.toString();
   const order = new OrderSettled(orderId);
+
+  const pendingOrderId = event.params.accountId.toString() + '-' + event.params.marketId.toString();
+  const pendingOrder = PendingOrder.load(pendingOrderId);
+
+  if (pendingOrder !== null) {
+    order.orderCommitted = pendingOrder.orderCommittedId;
+    store.remove('PendingOrder', pendingOrderId);
+  }
+
+  order.txHash = event.transaction.hash.toHex();
   order.accountId = event.params.accountId;
   order.account = event.params.accountId.toString();
   order.accruedFunding = event.params.accruedFunding;
@@ -344,6 +357,34 @@ export function handleCollateralModified(event: CollateralModifiedEvent): void {
     collateralChange.txHash = event.transaction.hash.toHex();
     collateralChange.save();
   }
+}
+
+export function handleOrderCommitted(event: OrderCommittedEvent): void {
+  const orderCommittedId = event.params.accountId.toString() + '-' + event.block.timestamp.toString();
+  const pendingOrderId = event.params.accountId.toString() + '-' + event.params.marketId.toString();
+
+  const pendingOrder = new PendingOrder(pendingOrderId);
+  const orderCommitted = new OrderCommitted(orderCommittedId);
+
+  pendingOrder.orderCommittedId = orderCommitted.id;
+  pendingOrder.save();
+
+  orderCommitted.marketId = event.params.marketId;
+  orderCommitted.accountId = event.params.accountId;
+  orderCommitted.account = event.params.accountId.toString();
+  orderCommitted.orderType = event.params.orderType;
+  orderCommitted.sizeDelta = event.params.sizeDelta;
+  orderCommitted.acceptablePrice = event.params.acceptablePrice;
+  orderCommitted.commitmentTime = event.params.commitmentTime;
+  orderCommitted.expectedPriceTime = event.params.expectedPriceTime;
+  orderCommitted.settlementTime = event.params.settlementTime;
+  orderCommitted.expirationTime = event.params.expirationTime;
+  orderCommitted.trackingCode = event.params.trackingCode;
+  orderCommitted.sender = event.params.sender;
+  orderCommitted.txHash = event.transaction.hash.toHex();
+  orderCommitted.timestamp = event.block.timestamp;
+
+  orderCommitted.save();
 }
 
 function getOrCreateMarketAggregateStats(
