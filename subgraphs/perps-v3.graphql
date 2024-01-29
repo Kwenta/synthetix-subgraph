@@ -39,7 +39,7 @@ type OrderSettled @entity {
   trackingCode: Bytes!
   settler: Bytes!
   pnl: BigInt!
-  txHash: String!
+  txnHash: String!
 }
 
 type OrderCommitted @entity {
@@ -57,7 +57,7 @@ type OrderCommitted @entity {
   expirationTime: BigInt!
   trackingCode: Bytes!
   sender: Bytes!
-  txHash: String!
+  txnHash: String!
 }
 
 type PendingOrder @entity {

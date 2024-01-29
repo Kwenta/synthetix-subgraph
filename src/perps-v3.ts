@@ -98,7 +98,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     store.remove('PendingOrder', pendingOrderId);
   }
 
-  order.txHash = event.transaction.hash.toHex();
+  order.txnHash = event.transaction.hash.toHex();
   order.accountId = event.params.accountId;
   order.account = event.params.accountId.toString();
   order.accruedFunding = event.params.accruedFunding;
@@ -381,7 +381,7 @@ export function handleOrderCommitted(event: OrderCommittedEvent): void {
   orderCommitted.expirationTime = event.params.expirationTime;
   orderCommitted.trackingCode = event.params.trackingCode;
   orderCommitted.sender = event.params.sender;
-  orderCommitted.txHash = event.transaction.hash.toHex();
+  orderCommitted.txnHash = event.transaction.hash.toHex();
   orderCommitted.timestamp = event.block.timestamp;
 
   orderCommitted.save();
