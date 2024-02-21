@@ -152,7 +152,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
 
   if (statEntity == null) {
     statEntity = new PerpsV3Stat(statId);
-    statEntity.account = event.params.accountId;
+    statEntity.accountId = event.params.accountId;
     statEntity.accountOwner = account.owner;
     statEntity.feesPaid = ZERO;
     statEntity.pnl = ZERO;

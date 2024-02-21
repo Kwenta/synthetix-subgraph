@@ -158,7 +158,7 @@ type CollateralChange @entity {
 
 type PerpsV3Stat @entity {
   id: ID!
-  account: BigInt!
+  accountId: BigInt!
   accountOwner: Bytes!
   feesPaid: BigInt!
   pnl: BigInt!
