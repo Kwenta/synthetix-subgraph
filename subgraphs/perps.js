@@ -41,39 +41,23 @@ const mainnetConfig = {
   ],
 };
 
-const testnetConfig = {
-  managerStartBlock: 3495320,
+const sepoliaConfig = {
+  managerStartBlock: 5104367,
   factories: [
     {
-      address: '0xb5dCFb08a2CB07399b75B650B980732340c5Ed90',
-      startBlock: 7900382,
+      address: '0xF877315CfC91E69e7f4c308ec312cf91D66a095F',
+      startBlock: 7761214,
     },
   ],
   events: [
     {
-      address: '0x3617154844291712cBD2148D912b61d6641229a4',
-      startBlock: 7900386,
-    },
-    {
-      address: '0x4516b854803b058907DC7522A7a1E197b4CE92E6',
-      startBlock: 9680618,
-    },
-    {
-      address: '0xa7AE3969A128048290968b41865Eaa53B20FA69e',
-      startBlock: 10276247,
-    },
-    {
-      address: '0xe32F27B27F4ea5f10f269b52223910bA83e2933C',
-      startBlock: 12484966,
-    },
-    {
-      address: '0x1FCb6ea040623cd56029402F3973BDCF1aFc6141',
-      startBlock: 16414279,
+      address: '0xd5fE5beAa04270B32f81Bf161768c44DF9880D11',
+      startBlock: 7761214,
     },
   ],
 };
 
-const config = currentNetwork === 'optimism' ? mainnetConfig : testnetConfig;
+const config = currentNetwork === 'optimism' ? mainnetConfig : sepoliaConfig;
 
 // futures market manager
 getContractDeployments('FuturesMarketManager').forEach((a, i) => {

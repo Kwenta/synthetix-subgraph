@@ -20,6 +20,8 @@ function getReleaseInfo(file, network = undefined) {
     return require('synthetix/publish/deployed/mainnet-ovm/' + file);
   } else if (net === 'optimism-goerli') {
     return require('synthetix/publish/deployed/goerli-ovm/' + file);
+  } else if (net === 'optimism-sepolia') {
+    return require('synthetix/publish/deployed/sepolia-ovm/' + file);
   }
 
   return info;
@@ -136,7 +138,7 @@ function getFuturesMarkets(network = 'optimism') {
   return futuresMarkets.map(({ marketKey }) => marketKey.substring(1) /* Slicing off the `s` from marketKey */);
 }
 
-const NETWORKS = ['mainnet', 'goerli', 'optimism-goerli', 'optimism', 'base', 'base-sepolia'];
+const NETWORKS = ['mainnet', 'goerli', 'optimism-sepolia', 'optimism', 'base', 'base-sepolia'];
 
 module.exports = {
   getCurrentNetwork,
