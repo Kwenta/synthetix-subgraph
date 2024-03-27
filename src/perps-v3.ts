@@ -211,6 +211,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     positionEntity.openTimestamp = event.block.timestamp;
     positionEntity.avgEntryPrice = event.params.fillPrice;
     positionEntity.totalTrades = BigInt.fromI32(1);
+    positionEntity.trades = [order.id];
     positionEntity.entryPrice = event.params.fillPrice;
     positionEntity.lastPrice = event.params.fillPrice;
     positionEntity.realizedPnl = ZERO;
@@ -248,6 +249,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
       calculatePnl(positionEntity, order, event, statEntity);
     } else {
       positionEntity.totalTrades = positionEntity.totalTrades.plus(BigInt.fromI32(1));
+      positionEntity.trades.push(order.id);
       positionEntity.totalVolume = positionEntity.totalVolume.plus(volume);
 
       statEntity.totalTrades = statEntity.totalTrades.plus(BigInt.fromI32(1));

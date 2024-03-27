@@ -42,6 +42,7 @@ type FuturesPosition @entity {
   isOpen: Boolean!
   isLiquidated: Boolean!
   trades: BigInt!
+  allTrades: [FuturesTrade!]!
   totalVolume: BigInt!
   size: BigInt!
   initialMargin: BigInt!

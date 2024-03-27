@@ -298,6 +298,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
 
     // update position stats
     positionEntity.trades = positionEntity.trades.plus(BigInt.fromI32(1));
+    positionEntity.allTrades.push(tradeEntity.id);
     positionEntity.totalVolume = positionEntity.totalVolume.plus(volume);
 
     // update cumulative and aggregate stats

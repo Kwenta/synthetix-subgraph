@@ -77,6 +77,7 @@ type PerpsV3Position @entity {
   isOpen: Boolean!
   isLiquidated: Boolean!
   totalTrades: BigInt!
+  trades: [OrderSettled!]!
   totalVolume: BigInt!
   size: BigInt!
   realizedPnl: BigInt!
