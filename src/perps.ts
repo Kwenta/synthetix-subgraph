@@ -77,6 +77,29 @@ export function handleMarketRemoved(event: MarketRemovedEvent): void {
   // TODO: Handle market removal
 }
 
+// Update historical market stats entity
+function updateHistoricalMarketStats(marketKey: string, timestamp: BigInt, tradeSize: BigInt): void {
+  const dayTimestamp = timestamp.toI32() / DAY_SECONDS * DAY_SECONDS; // Convert to the start of the day
+  const historicalStatId = marketKey + '-' + dayTimestamp.toString();
+  let historicalStat = HistoricalMarketStats.load(historicalStatId);
+
+  if (!historicalStat) {
+    // If the historical stat does not exist, create a new one
+    historicalStat = new HistoricalMarketStats(historicalStatId);
+    historicalStat.timestamp = dayTimestamp;
+    historicalStat.marketKey = Bytes.fromHexString(marketKey) as Bytes;
+    historicalStat.marketAsset = Bytes.fromHexString(marketEntity.asset) as Bytes;
+    historicalStat.period = PeriodEnum.DAILY;
+    historicalStat.marketSize = ZERO;
+  } else {
+    // If the historical stat already exists for the day, add the new trade size to the existing marketSize
+    historicalStat.marketSize = historicalStat.marketSize.plus(tradeSize);
+  }
+
+  // save the data
+  historicalStat.save();
+}
+
 export function handlePositionModified(event: PositionModifiedEvent): void {
   // handler for the position modified function
   // the PositionModified event it emitted any time a user interacts with a position
@@ -320,6 +343,9 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
         synthetixFeePaid,
         ZERO,
       );
+      // update historical market stats ---cici
+      updateHistoricalMarketStats(marketEntity.marketKey, event.block.timestamp, tradeEntity.size);
+
     }
   } else {
     // if the tradeSize is equal to zero, it must be a margin transfer or a liquidation

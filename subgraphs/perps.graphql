@@ -246,3 +246,19 @@ type CrossMarginAccount @entity {
   id: ID!
   owner: Bytes!
 }
+
+# Define the enum for the 'period' field
+enum PeriodEnum {
+  DAILY
+  WEEKLY
+  MONTHLY
+  # Add other allowed values as needed
+}
+
+type HistoricalMarketStats @entity {
+  timestamp: BigInt!
+  marketKey: Bytes!
+  marketAsset: Bytes!
+  period: PeriodEnum
+  marketSize: BigInt!
+}
