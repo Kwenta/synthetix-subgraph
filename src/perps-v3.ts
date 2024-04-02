@@ -4,6 +4,7 @@ import {
   DelegatedAccount,
   FundingRatePeriod,
   FundingRateUpdate,
+  InterestCharged,
   OpenPerpsV3Position,
   OrderCommitted,
   OrderSettled,
@@ -26,6 +27,7 @@ import {
   PermissionRevoked as PermissionRevokedEvent,
   CollateralModified as CollateralModifiedEvent,
   OrderCommitted as OrderCommittedEvent,
+  InterestCharged as InterestChargedEvent,
 } from '../generated/subgraphs/perps-v3/PerpsV3/PerpsV3MarketProxy';
 import { BigInt, log, store } from '@graphprotocol/graph-ts';
 import {
@@ -154,6 +156,13 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
   order.settler = event.params.settler;
   order.txnHash = event.transaction.hash.toHex();
   order.pnl = ZERO;
+
+  let interestChargedItem = InterestCharged.load(
+    event.params.accountId.toString() + '-' + event.transaction.hash.toHex(),
+  );
+  if (interestChargedItem !== null) {
+    order.interestCharged = interestChargedItem.interest;
+  }
 
   let positionId = event.params.marketId.toString() + '-' + event.params.accountId.toString();
   let openPositionEntity = OpenPerpsV3Position.load(positionId);
@@ -290,6 +299,8 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
   }
   openPositionEntity.save();
 
+  log.info('Order Settled: {} {}', [order.account.toString(), event.block.number.toString()]);
+
   order.save();
 }
 
@@ -359,6 +370,7 @@ export function handleMarketUpdated(event: MarketUpdated): void {
     updateFundingRatePeriods(event.block.timestamp, marketEntity.marketSymbol, fundingRateUpdateEntity);
 
     marketEntity.lastPrice = price;
+    marketEntity.interestRate = event.params.currentFundingRate;
     marketEntity.save();
   }
 
@@ -465,6 +477,27 @@ export function handleOrderCommitted(event: OrderCommittedEvent): void {
   orderCommitted.save();
 }
 
+export function handleInterestCharged(event: InterestChargedEvent): void {
+  const accountId = event.params.accountId;
+  const account = Account.load(accountId.toString());
+
+  if (account !== null) {
+    let interestCharged = new InterestCharged(accountId.toString() + '-' + event.transaction.hash.toHex());
+
+    interestCharged.accountId = accountId;
+    interestCharged.timestamp = event.block.timestamp;
+    interestCharged.interest = event.params.interest;
+    interestCharged.txHash = event.transaction.hash.toHex();
+    interestCharged.block = event.block.number;
+    log.info('Interest charged: {} {} {}', [
+      interestCharged.interest.toString(),
+      interestCharged.accountId.toString(),
+      interestCharged.block.toString(),
+    ]);
+    interestCharged.save();
+  }
+}
+
 function calculatePnl(
   position: PerpsV3Position,
   order: OrderSettled,
@@ -476,11 +509,22 @@ function calculatePnl(
     .times(event.params.sizeDelta.abs())
     .times(position.size.gt(ZERO) ? BigInt.fromI32(1) : BigInt.fromI32(-1))
     .div(ETHER);
+  let interestCharged = ZERO;
+  if (order.interestCharged !== null) {
+    interestCharged = order.interestCharged!;
+  }
   position.realizedPnl = position.realizedPnl.plus(pnl);
-  position.pnlWithFeesPaid = position.realizedPnl.minus(position.feesPaid).plus(position.netFunding);
+  position.pnlWithFeesPaid = position.realizedPnl
+    .minus(position.feesPaid)
+    .plus(position.netFunding)
+    .plus(interestCharged);
   order.pnl = order.pnl.plus(pnl);
   statEntity.pnl = statEntity.pnl.plus(pnl);
-  statEntity.pnlWithFeesPaid = statEntity.pnlWithFeesPaid.plus(pnl).minus(position.feesPaid).plus(position.netFunding);
+  statEntity.pnlWithFeesPaid = statEntity.pnlWithFeesPaid
+    .plus(pnl)
+    .minus(order.totalFees)
+    .plus(order.accruedFunding)
+    .plus(interestCharged);
   let pnlSnapshot = new PnlSnapshot(
     position.id + '-' + event.block.timestamp.toString() + '-' + event.transaction.hash.toHex(),
   );

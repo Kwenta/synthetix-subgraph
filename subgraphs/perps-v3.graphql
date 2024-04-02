@@ -40,6 +40,7 @@ type OrderSettled @entity {
   settler: Bytes!
   pnl: BigInt!
   txnHash: String!
+  interestCharged: BigInt
 }
 
 type OrderCommitted @entity {
@@ -100,6 +101,7 @@ type PerpsV3Market @entity {
   marketName: String!
   marketSymbol: String!
   lastPrice: BigInt!
+  interestRate: BigInt
 }
 
 type SettlementStrategy @entity {
@@ -203,4 +205,13 @@ type PositionLiquidation @entity {
   amount: BigInt!
   notionalAmount: BigInt!
   estimatedPrice: BigInt!
+}
+
+type InterestCharged @entity {
+  id: ID!
+  timestamp: BigInt!
+  block: BigInt!
+  accountId: BigInt!
+  interest: BigInt!
+  txHash: String!
 }
