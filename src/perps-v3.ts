@@ -259,7 +259,10 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
       calculatePnl(positionEntity, order, event, statEntity);
     } else {
       positionEntity.totalTrades = positionEntity.totalTrades.plus(BigInt.fromI32(1));
-      positionEntity.trades.push(order.id);
+
+      const trades = positionEntity.trades;
+      trades.push(order.id);
+      positionEntity.trades = trades;
       positionEntity.totalVolume = positionEntity.totalVolume.plus(volume);
 
       statEntity.totalTrades = statEntity.totalTrades.plus(BigInt.fromI32(1));
