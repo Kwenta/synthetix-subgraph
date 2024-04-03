@@ -25,6 +25,7 @@ type FuturesTrade @entity {
   keeperFeesPaid: BigInt!
   orderType: FuturesOrderType!
   trackingCode: Bytes!
+  position: FuturesPosition
 }
 
 type FuturesPosition @entity {
@@ -42,6 +43,7 @@ type FuturesPosition @entity {
   isOpen: Boolean!
   isLiquidated: Boolean!
   trades: BigInt!
+  allTrades: [FuturesTrade!]! @derivedFrom(field: "position")
   totalVolume: BigInt!
   size: BigInt!
   initialMargin: BigInt!

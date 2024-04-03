@@ -242,6 +242,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     statEntity.totalVolume = statEntity.totalVolume.plus(volume);
 
     positionEntity.save();
+    order.position = positionEntity.id;
     statEntity.save();
   } else {
     const tradeNotionalValue = event.params.sizeDelta.abs().times(event.params.fillPrice);
@@ -261,6 +262,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
 
       statEntity.totalTrades = statEntity.totalTrades.plus(BigInt.fromI32(1));
       statEntity.totalVolume = statEntity.totalVolume.plus(volume);
+      order.position = positionEntity.id;
 
       if (
         (positionEntity.size.lt(ZERO) && event.params.newSize.gt(ZERO)) ||

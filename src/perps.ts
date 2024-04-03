@@ -281,7 +281,6 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
         }
       }
     }
-    tradeEntity.save();
 
     // update cumulative stats
     let volume = tradeEntity.size.times(tradeEntity.price).div(ETHER).abs();
@@ -299,6 +298,8 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     // update position stats
     positionEntity.trades = positionEntity.trades.plus(BigInt.fromI32(1));
     positionEntity.totalVolume = positionEntity.totalVolume.plus(volume);
+    tradeEntity.position = positionEntity.id;
+    tradeEntity.save();
 
     // update cumulative and aggregate stats
     const perpsTrackingEntity = PerpsTracking.load(event.transaction.hash.toHex());
