@@ -71,7 +71,7 @@ manifest.push({
         handler: 'handleSettlementStrategyEnabled',
       },
       {
-        event: 'MarketUpdated(uint128,uint256,int256,uint256,int256,int256,int256)',
+        event: 'MarketUpdated(uint128,uint256,int256,uint256,int256,int256,int256,uint128)',
         handler: 'handleMarketUpdated',
       },
       {
@@ -90,6 +90,40 @@ manifest.push({
         event:
           'OrderCommitted(indexed uint128,indexed uint128,uint8,int128,uint256,uint256,uint256,uint256,uint256,indexed bytes32,address)',
         handler: 'handleOrderCommitted',
+      },
+      {
+        event: 'InterestCharged(indexed uint128,uint256)',
+        handler: 'handleInterestCharged',
+      },
+    ],
+  },
+});
+
+manifest.push({
+  kind: 'ethereum/contract',
+  name: 'PerpsV3Legacy',
+  network: currentNetwork,
+  source: {
+    address: config.marketProxy.address,
+    abi: 'PerpsV3MarketProxyLegacy',
+    startBlock: config.marketProxy.startBlock,
+  },
+  mapping: {
+    kind: 'ethereum/events',
+    apiVersion: '0.0.6',
+    language: 'wasm/assemblyscript',
+    file: '../src/perps-v3.ts',
+    entities: ['Account', 'OrderSettled', 'DelegatedAccount'],
+    abis: [
+      {
+        name: 'PerpsV3MarketProxyLegacy',
+        file: '../abis/PerpsV3MarketProxyLegacy.json',
+      },
+    ],
+    eventHandlers: [
+      {
+        event: 'MarketUpdated(uint128,uint256,int256,uint256,int256,int256,int256)',
+        handler: 'handleMarketUpdated',
       },
     ],
   },
