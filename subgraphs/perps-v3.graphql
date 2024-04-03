@@ -208,6 +208,7 @@ type PositionLiquidation @entity {
   amount: BigInt!
   notionalAmount: BigInt!
   estimatedPrice: BigInt!
+  position: PerpsV3Position @derivedFrom(field: "liquidation")
 }
 
 type InterestCharged @entity {
