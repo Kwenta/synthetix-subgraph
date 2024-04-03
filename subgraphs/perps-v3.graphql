@@ -78,6 +78,7 @@ type PerpsV3Position @entity {
   account: Account!
   isOpen: Boolean!
   isLiquidated: Boolean!
+  liquidation: PositionLiquidation
   totalTrades: BigInt!
   trades: [OrderSettled!]! @derivedFrom(field: "position")
   totalVolume: BigInt!

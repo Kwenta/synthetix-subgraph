@@ -42,6 +42,7 @@ type FuturesPosition @entity {
   accountType: FuturesAccountType!
   isOpen: Boolean!
   isLiquidated: Boolean!
+  liquidation: FuturesTrade
   trades: BigInt!
   allTrades: [FuturesTrade!]! @derivedFrom(field: "position")
   totalVolume: BigInt!

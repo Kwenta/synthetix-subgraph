@@ -461,7 +461,6 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
     // adjust pnl for the additional fees paid
     positionEntity.pnl = positionEntity.pnl.plus(event.params.fee);
     positionEntity.pnlWithFeesPaid = positionEntity.pnl.minus(positionEntity.feesPaid).plus(positionEntity.netFunding);
-    positionEntity.save();
 
     // update stats entity
     if (statEntity) {
@@ -479,7 +478,9 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
       tradeEntity.feesPaid = tradeEntity.feesPaid.plus(event.params.fee);
       tradeEntity.pnl = tradeEntity.pnl.plus(event.params.fee);
       tradeEntity.save();
+      positionEntity.liquidation = tradeEntity.id;
     }
+    positionEntity.save();
   }
 
   // update cumulative entity
@@ -526,7 +527,6 @@ export function handlePositionLiquidatedV2(event: PositionLiquidatedV2Event): vo
     // adjust pnl for the additional fee paid
     positionEntity.pnl = positionEntity.pnl.plus(totalFee);
     positionEntity.pnlWithFeesPaid = positionEntity.pnl.minus(positionEntity.feesPaid).plus(positionEntity.netFunding);
-    positionEntity.save();
 
     // update stats entity
     if (statEntity) {
@@ -544,7 +544,9 @@ export function handlePositionLiquidatedV2(event: PositionLiquidatedV2Event): vo
       tradeEntity.feesPaid = tradeEntity.feesPaid.plus(totalFee);
       tradeEntity.pnl = tradeEntity.pnl.plus(totalFee);
       tradeEntity.save();
+      positionEntity.liquidation = tradeEntity.id;
     }
+    positionEntity.save();
   }
 
   // update cumulative entity

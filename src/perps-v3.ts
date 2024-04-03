@@ -114,6 +114,7 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
     let positionEntity = PerpsV3Position.load(openPosition.position!);
     if (positionEntity !== null) {
       positionEntity.isLiquidated = true;
+      positionEntity.liquidation = liquidation.id;
       positionEntity.isOpen = false;
       openPosition.position = null;
       positionEntity.save();
