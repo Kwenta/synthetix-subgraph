@@ -41,6 +41,7 @@ type OrderSettled @entity {
   pnl: BigInt!
   txnHash: String!
   interestCharged: BigInt
+  position: PerpsV3Position
 }
 
 type OrderCommitted @entity {
@@ -77,7 +78,9 @@ type PerpsV3Position @entity {
   account: Account!
   isOpen: Boolean!
   isLiquidated: Boolean!
+  liquidation: PositionLiquidation
   totalTrades: BigInt!
+  trades: [OrderSettled!]! @derivedFrom(field: "position")
   totalVolume: BigInt!
   size: BigInt!
   realizedPnl: BigInt!
@@ -205,6 +208,7 @@ type PositionLiquidation @entity {
   amount: BigInt!
   notionalAmount: BigInt!
   estimatedPrice: BigInt!
+  position: PerpsV3Position @derivedFrom(field: "liquidation")
 }
 
 type InterestCharged @entity {

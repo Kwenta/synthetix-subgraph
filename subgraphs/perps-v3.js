@@ -13,10 +13,16 @@ const mainnetConfig = {
 };
 
 const sepoliaConfig = {
-  marketProxy: {
-    address: '0xE6C5f05C415126E6b81FCc3619f65Db2fCAd58D0',
-    startBlock: 4548969,
-  },
+  marketProxy: [
+    {
+      address: '0xE6C5f05C415126E6b81FCc3619f65Db2fCAd58D0',
+      startBlock: 4548969,
+    },
+    {
+      address: '0xf53Ca60F031FAf0E347D44FbaA4870da68250c8d',
+      startBlock: 8157661,
+    },
+  ],
 };
 
 const config = currentNetwork === 'base' ? mainnetConfig : sepoliaConfig;
