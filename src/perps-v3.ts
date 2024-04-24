@@ -582,5 +582,11 @@ export function updateAggregateStatEntities(
     aggStats.trades = aggStats.trades.plus(trades);
     aggStats.volume = aggStats.volume.plus(volume);
     aggStats.save();
+
+    // update the aggregate for all markets
+    let aggCumulativeStats = getOrCreateMarketAggregateStats(new BigInt(0), 'ALL', aggTimestamp, thisPeriod);
+    aggCumulativeStats.trades = aggCumulativeStats.trades.plus(trades);
+    aggCumulativeStats.volume = aggCumulativeStats.volume.plus(volume);
+    aggCumulativeStats.save();
   }
 }
