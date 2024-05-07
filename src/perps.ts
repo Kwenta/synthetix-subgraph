@@ -14,6 +14,7 @@ import {
   FuturesOrder,
   SmartMarginOrder,
   FundingRatePeriod,
+  LastMarketTrade,
 } from '../generated/subgraphs/perps/schema';
 import {
   MarketAdded as MarketAddedEvent,
@@ -322,6 +323,12 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
         ZERO,
       );
     }
+
+    // Create LastMarketTrade entity to reconcile with FuturesOrder
+    let lastMarketTrade = new LastMarketTrade(futuresMarketAddress.toHex() + '-' + account.toHex());
+    lastMarketTrade.account = account;
+    lastMarketTrade.price = tradeEntity.price;
+    lastMarketTrade.save();
   } else {
     // if the tradeSize is equal to zero, it must be a margin transfer or a liquidation
     const txHash = event.transaction.hash.toHex();
@@ -809,6 +816,11 @@ export function handleDelayedOrderSubmitted(event: DelayedOrderSubmittedEvent): 
     futuresOrderEntity.orderType = event.params.isOffchain ? 'DelayedOffchain' : 'Delayed';
     futuresOrderEntity.status = 'Pending';
     futuresOrderEntity.keeper = ZERO_ADDRESS;
+
+    let lastMarketTrade = LastMarketTrade.load(futuresMarketAddress.toHex() + '-' + account.toHex());
+    if (lastMarketTrade) {
+      futuresOrderEntity.targetPrice = lastMarketTrade.price;
+    }
 
     futuresOrderEntity.save();
   }
