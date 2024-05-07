@@ -227,6 +227,7 @@ function handleOrderFilled(event: ConditionalOrderFilledEvent, priceOracle: stri
     futuresOrderEntity.status = 'Filled';
     futuresOrderEntity.timestamp = event.block.timestamp;
     futuresOrderEntity.priceOracle = priceOracle;
+    futuresOrderEntity.fillPrice = event.params.fillPrice;
 
     const smartMarginOrder = getOrCreateSmartMarginOrder(smAccountAddress, futuresOrderEntity.marketKey);
     smartMarginOrder.orderType = futuresOrderEntity.orderType;

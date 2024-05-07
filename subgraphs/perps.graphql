@@ -196,7 +196,7 @@ type FuturesOrder @entity {
   keeper: Bytes!
   reduceOnly: Boolean
   priceOracle: FuturesPriceOracleUsed
-  price: BigInt
+  fillPrice: BigInt
 }
 
 type SmartMarginAccount @entity {
