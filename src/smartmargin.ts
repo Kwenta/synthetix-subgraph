@@ -182,58 +182,40 @@ export function handleOrderV1Filled(event: ConditionalOrderFilledEvent): void {
 }
 
 export function handleOrderV2Filled(event: ConditionalOrderFilled1Event): void {
-  const v1Event = new ConditionalOrderFilledEvent(
-    event.address,
-    event.logIndex,
-    event.transactionLogIndex,
-    event.logType,
-    event.block,
-    event.transaction,
-    event.parameters,
-    event.receipt,
-  );
-
-  handleOrderFilled(v1Event, 'CHAINLINK');
+  handleOrderFilled(event, 'CHAINLINK');
 }
 
 export function handleOrderV2FilledWithPriceOracle(event: ConditionalOrderFilled2Event): void {
   const priceOracle = event.params.priceOracle === 0 ? 'PYTH' : 'CHAINLINK';
-  const v1Params = event.parameters.filter((value) => {
-    return value.name !== 'priceOracle';
-  });
-
-  const v1Event = new ConditionalOrderFilledEvent(
-    event.address,
-    event.logIndex,
-    event.transactionLogIndex,
-    event.logType,
-    event.block,
-    event.transaction,
-    v1Params,
-    event.receipt,
-  );
-  handleOrderFilled(v1Event, priceOracle);
+  handleOrderFilled(event, priceOracle);
 }
 
-function handleOrderFilled(event: ConditionalOrderFilledEvent, priceOracle: string): void {
+function handleOrderFilled<T>(event: T, priceOracle: string): void {
   // handle order filled event for smart margin account
   // update the order status to filled
-  const smAccountAddress = event.params.account as Address;
+  if (
+    event instanceof ConditionalOrderFilledEvent ||
+    event instanceof ConditionalOrderFilled1Event ||
+    event instanceof ConditionalOrderFilled2Event
+  ) {
+    const smAccountAddress = event.params.account as Address;
 
-  const futuresOrderEntityId = `SM-${smAccountAddress.toHexString()}-${event.params.conditionalOrderId.toString()}`;
-  const futuresOrderEntity = FuturesOrder.load(futuresOrderEntityId);
-  if (futuresOrderEntity) {
-    // update the order status
-    futuresOrderEntity.status = 'Filled';
-    futuresOrderEntity.timestamp = event.block.timestamp;
-    futuresOrderEntity.priceOracle = priceOracle;
+    const futuresOrderEntityId = `SM-${smAccountAddress.toHexString()}-${event.params.conditionalOrderId.toString()}`;
+    const futuresOrderEntity = FuturesOrder.load(futuresOrderEntityId);
+    if (futuresOrderEntity) {
+      // update the order status
+      futuresOrderEntity.status = 'Filled';
+      futuresOrderEntity.timestamp = event.block.timestamp;
+      futuresOrderEntity.priceOracle = priceOracle;
+      futuresOrderEntity.fillPrice = event.params.fillPrice;
 
-    const smartMarginOrder = getOrCreateSmartMarginOrder(smAccountAddress, futuresOrderEntity.marketKey);
-    smartMarginOrder.orderType = futuresOrderEntity.orderType;
-    smartMarginOrder.recordTrade = true;
+      const smartMarginOrder = getOrCreateSmartMarginOrder(smAccountAddress, futuresOrderEntity.marketKey);
+      smartMarginOrder.orderType = futuresOrderEntity.orderType;
+      smartMarginOrder.recordTrade = true;
 
-    futuresOrderEntity.save();
-    smartMarginOrder.save();
+      futuresOrderEntity.save();
+      smartMarginOrder.save();
+    }
   }
 }
 

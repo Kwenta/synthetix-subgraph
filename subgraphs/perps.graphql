@@ -196,6 +196,7 @@ type FuturesOrder @entity {
   keeper: Bytes!
   reduceOnly: Boolean
   priceOracle: FuturesPriceOracleUsed
+  fillPrice: BigInt
 }
 
 type SmartMarginAccount @entity {
@@ -248,4 +249,10 @@ type CrossMarginAccountTransfer @entity {
 type CrossMarginAccount @entity {
   id: ID!
   owner: Bytes!
+}
+
+type LastMarketTrade @entity {
+  id: ID!
+  account: Bytes!
+  price: BigInt!
 }
