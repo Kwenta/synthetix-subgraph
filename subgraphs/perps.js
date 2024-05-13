@@ -54,6 +54,10 @@ const sepoliaConfig = {
       address: '0xd5fE5beAa04270B32f81Bf161768c44DF9880D11',
       startBlock: 7761214,
     },
+    {
+      address: '0x3eF73cD1B3B708ab1F2ccB4AcDA036Ac3FDc3615',
+      startBlock: 11786846,
+    },
   ],
 };
 
@@ -269,6 +273,11 @@ config.events.forEach((events, ind) => {
         {
           event: 'ConditionalOrderFilled(indexed address,indexed uint256,indexed bytes32,uint256,uint256,uint8)',
           handler: 'handleOrderV2FilledWithPriceOracle',
+        },
+        // smart margin v2.1.4
+        {
+          event: 'OrderFlowFeeImposed(indexed address,uint256)',
+          handler: 'handleOrderFlowFeeImposed',
         },
       ],
     },

@@ -25,31 +25,6 @@
         "type": "address"
       },
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "conditionalOrderId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "enum IAccount.ConditionalOrderCancelledReason",
-        "name": "reason",
-        "type": "uint8"
-      }
-    ],
-    "name": "ConditionalOrderCancelled",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
         "indexed": true,
         "internalType": "uint256",
         "name": "conditionalOrderId",
@@ -69,74 +44,6 @@
       }
     ],
     "name": "ConditionalOrderCancelled",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "conditionalOrderId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "fillPrice",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "keeperFee",
-        "type": "uint256"
-      }
-    ],
-    "name": "ConditionalOrderFilled",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "conditionalOrderId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "gelatoTaskId",
-        "type": "bytes32"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "fillPrice",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "keeperFee",
-        "type": "uint256"
-      }
-    ],
-    "name": "ConditionalOrderFilled",
     "type": "event"
   },
   {
@@ -192,67 +99,6 @@
         "type": "address"
       },
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "conditionalOrderId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "marketKey",
-        "type": "bytes32"
-      },
-      {
-        "indexed": false,
-        "internalType": "int256",
-        "name": "marginDelta",
-        "type": "int256"
-      },
-      {
-        "indexed": false,
-        "internalType": "int256",
-        "name": "sizeDelta",
-        "type": "int256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "targetPrice",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "enum IAccount.ConditionalOrderTypes",
-        "name": "conditionalOrderType",
-        "type": "uint8"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "desiredFillPrice",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "reduceOnly",
-        "type": "bool"
-      }
-    ],
-    "name": "ConditionalOrderPlaced",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
         "indexed": true,
         "internalType": "uint256",
         "name": "conditionalOrderId",
@@ -308,6 +154,44 @@
       }
     ],
     "name": "ConditionalOrderPlaced",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "delegate",
+        "type": "address"
+      }
+    ],
+    "name": "DelegatedAccountAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "delegate",
+        "type": "address"
+      }
+    ],
+    "name": "DelegatedAccountRemoved",
     "type": "event"
   },
   {
@@ -366,6 +250,81 @@
       {
         "indexed": true,
         "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "OrderFlowFeeImposed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "tokenIn",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "tokenOut",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountIn",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountOutMinimum",
+        "type": "uint256"
+      }
+    ],
+    "name": "UniswapV3Swap",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "user",
         "type": "address"
       },
@@ -393,6 +352,11 @@
         "type": "uint256"
       },
       {
+        "internalType": "bytes32",
+        "name": "gelatoTaskId",
+        "type": "bytes32"
+      },
+      {
         "internalType": "enum IAccount.ConditionalOrderCancelledReason",
         "name": "reason",
         "type": "uint8"
@@ -411,6 +375,11 @@
         "type": "uint256"
       },
       {
+        "internalType": "bytes32",
+        "name": "gelatoTaskId",
+        "type": "bytes32"
+      },
+      {
         "internalType": "uint256",
         "name": "fillPrice",
         "type": "uint256"
@@ -419,57 +388,14 @@
         "internalType": "uint256",
         "name": "keeperFee",
         "type": "uint256"
+      },
+      {
+        "internalType": "enum IAccount.PriceOracleUsed",
+        "name": "priceOracle",
+        "type": "uint8"
       }
     ],
     "name": "emitConditionalOrderFilled",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "conditionalOrderId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "marketKey",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "int256",
-        "name": "marginDelta",
-        "type": "int256"
-      },
-      {
-        "internalType": "int256",
-        "name": "sizeDelta",
-        "type": "int256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "targetPrice",
-        "type": "uint256"
-      },
-      {
-        "internalType": "enum IAccount.ConditionalOrderTypes",
-        "name": "conditionalOrderType",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint256",
-        "name": "desiredFillPrice",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "reduceOnly",
-        "type": "bool"
-      }
-    ],
-    "name": "emitConditionalOrderPlaced",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -531,6 +457,42 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "delegate",
+        "type": "address"
+      }
+    ],
+    "name": "emitDelegatedAccountAdded",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "delegate",
+        "type": "address"
+      }
+    ],
+    "name": "emitDelegatedAccountRemoved",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "user",
         "type": "address"
       },
@@ -566,6 +528,70 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "emitOrderFlowFeeImposed",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "emitOwnershipTransferred",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "tokenIn",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOut",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountOutMinimum",
+        "type": "uint256"
+      }
+    ],
+    "name": "emitUniswapV3Swap",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "user",
         "type": "address"
@@ -593,43 +619,5 @@
     ],
     "stateMutability": "view",
     "type": "function"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "caller",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "delegate",
-        "type": "address"
-      }
-    ],
-    "name": "DelegatedAccountAdded",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "caller",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "delegate",
-        "type": "address"
-      }
-    ],
-    "name": "DelegatedAccountRemoved",
-    "type": "event"
   }
 ]
