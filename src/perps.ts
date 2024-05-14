@@ -1,4 +1,4 @@
-import { Address, BigInt, Bytes, log, store } from '@graphprotocol/graph-ts';
+import { Address, BigInt, Bytes, log } from '@graphprotocol/graph-ts';
 
 import {
   FuturesMarket as FuturesMarketEntity,
@@ -15,6 +15,7 @@ import {
   SmartMarginOrder,
   FundingRatePeriod,
   LastMarketTrade,
+  OrderFlowFeeImposed,
 } from '../generated/subgraphs/perps/schema';
 import {
   MarketAdded as MarketAddedEvent,
@@ -102,6 +103,15 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
 
   // calculated values
   const synthetixFeePaid = event.params.fee;
+
+  // Imposed OrderFlowFee
+  const orderFlowFeeEntity = OrderFlowFeeImposed.load(event.transaction.hash.toHex() + '-' + account.toHex());
+  let orderFlowFee = ZERO;
+  if (orderFlowFeeEntity) {
+    orderFlowFee = orderFlowFeeEntity.amount;
+  }
+
+  const feesPaid = synthetixFeePaid.plus(orderFlowFee);
 
   // each trader will have a stats entity created during their first transfer
   if (statEntity == null) {
@@ -199,7 +209,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     tradeEntity.account = account;
     tradeEntity.abstractAccount = sendingAccount;
     tradeEntity.accountType = accountType;
-    tradeEntity.margin = event.params.margin.plus(synthetixFeePaid);
+    tradeEntity.margin = event.params.margin.plus(feesPaid);
     tradeEntity.size = event.params.tradeSize;
     tradeEntity.asset = ZERO_ADDRESS;
     tradeEntity.marketKey = ZERO_ADDRESS;
@@ -207,7 +217,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     tradeEntity.positionId = positionId;
     tradeEntity.positionSize = event.params.size;
     tradeEntity.pnl = ZERO;
-    tradeEntity.feesPaid = synthetixFeePaid;
+    tradeEntity.feesPaid = feesPaid;
     tradeEntity.fundingAccrued = fundingAccrued;
     tradeEntity.keeperFeesPaid = ZERO;
     tradeEntity.orderType = 'Market';
@@ -319,7 +329,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
         event.block.timestamp,
         ONE,
         volume,
-        synthetixFeePaid,
+        feesPaid,
         ZERO,
       );
     }
@@ -365,7 +375,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       tradeEntity.positionSize = ZERO;
       tradeEntity.positionClosed = true;
       tradeEntity.pnl = newTradePnl;
-      tradeEntity.feesPaid = synthetixFeePaid;
+      tradeEntity.feesPaid = feesPaid;
       tradeEntity.fundingAccrued = fundingAccrued;
       tradeEntity.keeperFeesPaid = ZERO;
       tradeEntity.orderType = 'Liquidation';
@@ -391,12 +401,12 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
 
   // update global values
   statEntity.pnlWithFeesPaid = statEntity.pnl.minus(statEntity.feesPaid);
-  statEntity.feesPaid = statEntity.feesPaid.plus(synthetixFeePaid);
+  statEntity.feesPaid = statEntity.feesPaid.plus(feesPaid);
 
   positionEntity.size = event.params.size;
   positionEntity.margin = event.params.margin;
   positionEntity.lastPrice = event.params.lastPrice;
-  positionEntity.feesPaid = positionEntity.feesPaid.plus(synthetixFeePaid);
+  positionEntity.feesPaid = positionEntity.feesPaid.plus(feesPaid);
   positionEntity.pnlWithFeesPaid = positionEntity.pnl.minus(positionEntity.feesPaid).plus(positionEntity.netFunding);
   positionEntity.lastTxHash = event.transaction.hash;
   positionEntity.timestamp = event.block.timestamp;
