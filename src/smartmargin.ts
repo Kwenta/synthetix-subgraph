@@ -18,8 +18,10 @@ import {
   SmartMarginAccount,
   SmartMarginAccountTransfer,
   SmartMarginOrder,
+  OrderFlowFeeImposed,
 } from '../generated/subgraphs/perps/schema';
 import { ZERO, ZERO_ADDRESS } from './lib/helpers';
+import { OrderFlowFeeImposed as OrderFlowFeeImposedEvent } from '../generated/subgraphs/perps/smartmargin_events_0/Events';
 
 export function handleNewAccount(event: NewAccountEvent): void {
   // handle new account event for smart margin account factory
@@ -233,6 +235,17 @@ export function handleOrderCancelled(event: ConditionalOrderCancelledEvent): voi
     futuresOrderEntity.timestamp = event.block.timestamp;
     futuresOrderEntity.save();
   }
+}
+
+export function handleOrderFlowFeeImposed(event: OrderFlowFeeImposedEvent): void {
+  // handle order flow fee imposed event for smart margin account
+  const smAccountAddress = event.params.account as Address;
+  const orderFlowFeeEntity = new OrderFlowFeeImposed(event.transaction.hash.toHex() + '-' + smAccountAddress.toHex());
+
+  orderFlowFeeEntity.account = smAccountAddress;
+  orderFlowFeeEntity.amount = event.params.amount;
+
+  orderFlowFeeEntity.save();
 }
 
 function getOrCreateSmartMarginOrder(account: Address, marketKey: Bytes): SmartMarginOrder {
