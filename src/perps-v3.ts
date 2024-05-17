@@ -619,6 +619,7 @@ function updateAccumulatedVolumeFee(event: OrderSettledEvent): BigInt {
   const newOrderVolume = event.params.sizeDelta.abs().times(event.params.fillPrice).div(ETHER).abs();
   const newOrderFees = event.params.totalFees;
   const newOrderId = event.params.accountId.toString() + '-' + event.block.timestamp.toString();
+  let newOrderIds: string[];
 
   let accumulatedVolumeFeeEntity = AccumulatedVolumeFee.load(event.params.accountId.toString());
   if (accumulatedVolumeFeeEntity == null) {
@@ -631,7 +632,9 @@ function updateAccumulatedVolumeFee(event: OrderSettledEvent): BigInt {
 
   accumulatedVolumeFeeEntity.volume = accumulatedVolumeFeeEntity.volume.plus(newOrderVolume);
   accumulatedVolumeFeeEntity.fees = accumulatedVolumeFeeEntity.fees.plus(newOrderFees);
-  accumulatedVolumeFeeEntity.orderIds.push(newOrderId);
+  newOrderIds = accumulatedVolumeFeeEntity.orderIds;
+  newOrderIds.push(newOrderId);
+  accumulatedVolumeFeeEntity.orderIds = newOrderIds;
 
   let thirtyDaysAgo = event.block.timestamp.minus(SECONDS_IN_30_DAYS);
 
@@ -643,7 +646,8 @@ function updateAccumulatedVolumeFee(event: OrderSettledEvent): BigInt {
       const volume = oldestOrder.sizeDelta.abs().times(oldestOrder.fillPrice).div(ETHER).abs();
       accumulatedVolumeFeeEntity.volume = accumulatedVolumeFeeEntity.volume.minus(volume);
       accumulatedVolumeFeeEntity.fees = accumulatedVolumeFeeEntity.fees.minus(oldestOrder.totalFees);
-      accumulatedVolumeFeeEntity.orderIds.shift();
+      newOrderIds = newOrderIds.slice(1);
+      accumulatedVolumeFeeEntity.orderIds = newOrderIds;
     } else {
       break;
     }
