@@ -39,11 +39,10 @@ import {
   ONE,
   ONE_HOUR_SECONDS,
   SECONDS_IN_30_DAYS,
-  VIP_TIER_2_VOLUME,
-  VIP_TIER_3_VOLUME,
-  VIP_TIER_4_VOLUME,
   ZERO,
+  computeVipFeeRebate,
   getTimeID,
+  getVipTier,
   strToBytes,
 } from './lib/helpers';
 import {
@@ -161,8 +160,11 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
   order.referralFees = event.params.referralFees;
   order.settler = event.params.settler;
   order.txnHash = event.transaction.hash.toHex();
-  order.vipTier = getVipTier(event);
   order.pnl = ZERO;
+
+  const accumulatedVolume = updateAccumulatedVolumeFee(event);
+  order.vipTier = getVipTier(accumulatedVolume);
+  order.feeRebate = computeVipFeeRebate(order.totalFees, order.vipTier);
 
   let interestChargedItem = InterestCharged.load(
     event.params.accountId.toString() + '-' + event.transaction.hash.toHex(),
@@ -597,24 +599,6 @@ export function updateAggregateStatEntities(
   }
 }
 
-// @ts-ignore
-function getVipTier(event: OrderSettledEvent): i32 {
-  const accumulatedVolume = updateAccumulatedVolumeFee(event);
-  let tier = 1;
-  if (accumulatedVolume >= VIP_TIER_4_VOLUME) {
-    tier = 4;
-  } else if (accumulatedVolume >= VIP_TIER_3_VOLUME && accumulatedVolume < VIP_TIER_4_VOLUME) {
-    tier = 3;
-  } else if (accumulatedVolume >= VIP_TIER_2_VOLUME && accumulatedVolume < VIP_TIER_3_VOLUME) {
-    tier = 2;
-  } else {
-    tier = 1;
-  }
-
-  // @ts-ignore
-  return tier as i32;
-}
-
 function updateAccumulatedVolumeFee(event: OrderSettledEvent): BigInt {
   const newOrderVolume = event.params.sizeDelta.abs().times(event.params.fillPrice).div(ETHER).abs();
   const newOrderFees = event.params.totalFees;
@@ -630,11 +614,7 @@ function updateAccumulatedVolumeFee(event: OrderSettledEvent): BigInt {
     accumulatedVolumeFeeEntity.orderIds = [];
   }
 
-  accumulatedVolumeFeeEntity.volume = accumulatedVolumeFeeEntity.volume.plus(newOrderVolume);
-  accumulatedVolumeFeeEntity.fees = accumulatedVolumeFeeEntity.fees.plus(newOrderFees);
   newOrderIds = accumulatedVolumeFeeEntity.orderIds;
-  newOrderIds.push(newOrderId);
-  accumulatedVolumeFeeEntity.orderIds = newOrderIds;
 
   let thirtyDaysAgo = event.block.timestamp.minus(SECONDS_IN_30_DAYS);
 
@@ -652,6 +632,11 @@ function updateAccumulatedVolumeFee(event: OrderSettledEvent): BigInt {
       break;
     }
   }
+
+  accumulatedVolumeFeeEntity.volume = accumulatedVolumeFeeEntity.volume.plus(newOrderVolume);
+  accumulatedVolumeFeeEntity.fees = accumulatedVolumeFeeEntity.fees.plus(newOrderFees);
+  newOrderIds.push(newOrderId);
+  accumulatedVolumeFeeEntity.orderIds = newOrderIds;
 
   accumulatedVolumeFeeEntity.save();
   return accumulatedVolumeFeeEntity.volume;

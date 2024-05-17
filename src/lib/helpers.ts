@@ -73,7 +73,38 @@ export function getLatestRate(synth: string, txHash: string): BigDecimal | null 
 }
 
 export const SECONDS_IN_30_DAYS = BigInt.fromI32(30 * 24 * 60 * 60);
-export const VIP_TIER_1_VOLUME = BigInt.fromI32(100000);
-export const VIP_TIER_2_VOLUME = BigInt.fromI32(1000000);
-export const VIP_TIER_3_VOLUME = BigInt.fromI32(10000000);
-export const VIP_TIER_4_VOLUME = BigInt.fromI32(100000000);
+
+export const VIP_TIER_REBATE = [
+  [BigInt.fromI32(100000).times(ETHER), BigInt.fromI32(20)],
+  [BigInt.fromI32(1000000).times(ETHER), BigInt.fromI32(50)],
+  [BigInt.fromI32(10000000).times(ETHER), BigInt.fromI32(75)],
+  [BigInt.fromI32(100000000).times(ETHER), BigInt.fromI32(90)],
+];
+
+export function getTierMinVolume(tier: i32): BigInt {
+  if (tier != 1 && tier != 2 && tier != 3 && tier != 4) {
+    return ZERO;
+  }
+
+  return VIP_TIER_REBATE[tier - 1][0];
+}
+
+export function computeVipFeeRebate(fees: BigInt, tier: i32): BigInt {
+  if (tier != 1 && tier != 2 && tier != 3 && tier != 4) {
+    return ZERO;
+  }
+
+  return fees.times(VIP_TIER_REBATE[tier - 1][1]).div(BigInt.fromI32(100));
+}
+
+export function getVipTier(accumulatedVolume: BigInt): i32 {
+  if (accumulatedVolume >= getTierMinVolume(4)) {
+    return 4;
+  } else if (accumulatedVolume >= getTierMinVolume(3) && accumulatedVolume < getTierMinVolume(4)) {
+    return 3;
+  } else if (accumulatedVolume >= getTierMinVolume(2) && accumulatedVolume < getTierMinVolume(3)) {
+    return 2;
+  } else {
+    return 1;
+  }
+}

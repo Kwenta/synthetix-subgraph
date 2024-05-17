@@ -43,6 +43,7 @@ type OrderSettled @entity {
   interestCharged: BigInt
   position: PerpsV3Position
   vipTier: Int
+  feeRebate: BigInt!
 }
 
 type OrderCommitted @entity {
