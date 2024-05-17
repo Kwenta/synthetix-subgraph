@@ -17,6 +17,7 @@ import {
   PnlSnapshot,
   MarketPriceUpdate,
   PositionLiquidation,
+  AccumulatedVolumeFee,
 } from '../generated/subgraphs/perps-v3/schema';
 import {
   AccountCreated,
@@ -37,6 +38,10 @@ import {
   FUNDING_RATE_PERIOD_TYPES,
   ONE,
   ONE_HOUR_SECONDS,
+  SECONDS_IN_30_DAYS,
+  VIP_TIER_2_VOLUME,
+  VIP_TIER_3_VOLUME,
+  VIP_TIER_4_VOLUME,
   ZERO,
   getTimeID,
   strToBytes,
@@ -156,6 +161,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
   order.referralFees = event.params.referralFees;
   order.settler = event.params.settler;
   order.txnHash = event.transaction.hash.toHex();
+  order.vipTier = getVipTier(event);
   order.pnl = ZERO;
 
   let interestChargedItem = InterestCharged.load(
@@ -589,4 +595,66 @@ export function updateAggregateStatEntities(
     aggCumulativeStats.volume = aggCumulativeStats.volume.plus(volume);
     aggCumulativeStats.save();
   }
+}
+
+// @ts-ignore
+function getVipTier(event: OrderSettledEvent): i32 {
+  const accumulatedVolume = updateAccumulatedVolumeFee(event);
+  let tier = 1;
+  if (accumulatedVolume >= VIP_TIER_4_VOLUME) {
+    tier = 4;
+  } else if (accumulatedVolume >= VIP_TIER_3_VOLUME && accumulatedVolume < VIP_TIER_4_VOLUME) {
+    tier = 3;
+  } else if (accumulatedVolume >= VIP_TIER_2_VOLUME && accumulatedVolume < VIP_TIER_3_VOLUME) {
+    tier = 2;
+  } else {
+    tier = 1;
+  }
+
+  // @ts-ignore
+  return tier as i32;
+}
+
+function updateAccumulatedVolumeFee(event: OrderSettledEvent): BigInt {
+  const orderVolume = event.params.sizeDelta.abs().times(event.params.fillPrice).div(ETHER).abs();
+  const orderFees = event.params.totalFees;
+  const orderId = event.params.accountId.toString() + '-' + event.block.timestamp.toString();
+
+  let accumulatedVolumeFee = AccumulatedVolumeFee.load(event.params.accountId.toString());
+  if (accumulatedVolumeFee == null) {
+    accumulatedVolumeFee = new AccumulatedVolumeFee(event.params.accountId.toString());
+    accumulatedVolumeFee.volume = BigInt.fromI32(0);
+    accumulatedVolumeFee.timestamp = event.block.timestamp;
+    accumulatedVolumeFee.orderIds = [];
+  }
+
+  // Add current event volume to accumulated volume
+  accumulatedVolumeFee.volume = accumulatedVolumeFee.volume.plus(orderVolume);
+  accumulatedVolumeFee.fees = accumulatedVolumeFee.fees.plus(orderFees);
+  accumulatedVolumeFee.orderIds.push(orderId);
+
+  let thirtyDaysAgo = event.block.timestamp.minus(SECONDS_IN_30_DAYS);
+
+  // Remove volumes of events older than 30 days
+  let updatedOrderIds: string[] = [];
+  let newVolume = BigInt.fromI32(0);
+
+  for (let i = 0; i < accumulatedVolumeFee.orderIds.length; i++) {
+    let orderSettledId = accumulatedVolumeFee.orderIds[i];
+    let orderSettled = OrderSettled.load(orderSettledId);
+    if (orderSettled && orderSettled.timestamp >= thirtyDaysAgo) {
+      updatedOrderIds.push(orderSettledId);
+
+      const orderSettledVolume = orderSettled.sizeDelta.abs().times(orderSettled.fillPrice).div(ETHER).abs();
+      newVolume = newVolume.plus(orderSettledVolume);
+    }
+  }
+
+  accumulatedVolumeFee.orderIds = updatedOrderIds;
+  accumulatedVolumeFee.volume = newVolume;
+  accumulatedVolumeFee.timestamp = event.block.timestamp;
+
+  accumulatedVolumeFee.save();
+
+  return accumulatedVolumeFee.volume;
 }

@@ -71,3 +71,9 @@ export function getLatestRate(synth: string, txHash: string): BigDecimal | null 
   }
   return latestRate.rate;
 }
+
+export const SECONDS_IN_30_DAYS = BigInt.fromI32(30 * 24 * 60 * 60);
+export const VIP_TIER_1_VOLUME = BigInt.fromI32(100000);
+export const VIP_TIER_2_VOLUME = BigInt.fromI32(1000000);
+export const VIP_TIER_3_VOLUME = BigInt.fromI32(10000000);
+export const VIP_TIER_4_VOLUME = BigInt.fromI32(100000000);
