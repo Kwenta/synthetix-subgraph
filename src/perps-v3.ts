@@ -649,5 +649,6 @@ function updateAccumulatedVolumeFee(event: OrderSettledEvent): BigInt {
     }
   }
 
+  accumulatedVolumeFeeEntity.save();
   return accumulatedVolumeFeeEntity.volume;
 }
