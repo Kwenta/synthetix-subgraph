@@ -229,3 +229,14 @@ type AccumulatedVolumeFee @entity {
   timestamp: BigInt!
   orderIds: [String!]!
 }
+
+type FeeReimbursed @entity {
+  id: ID!
+  timestamp: BigInt!
+  accountId: BigInt!
+  feeRebate: BigInt!
+  from: BigInt!
+  to: BigInt!
+  startBlockNumber: BigInt!
+  endBlockNumber: BigInt!
+}
