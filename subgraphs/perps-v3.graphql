@@ -225,15 +225,19 @@ type InterestCharged @entity {
 type AccumulatedVolumeFee @entity {
   id: ID!
   volume: BigInt!
-  fees: BigInt!
+  remainingVolume: BigInt!
+  paidFeesSinceClaimed: BigInt!
+  claimableFees: BigInt!
   timestamp: BigInt!
   orderIds: [String!]!
+  lastClaimedAt: BigInt
+  tier: Int!
 }
 
 type FeeReimbursed @entity {
   id: ID!
-  timestamp: BigInt!
   accountId: BigInt!
+  timestamp: BigInt!
   feeRebate: BigInt!
   from: BigInt!
   to: BigInt!

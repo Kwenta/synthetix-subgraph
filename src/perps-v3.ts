@@ -41,6 +41,7 @@ import {
   SECONDS_IN_30_DAYS,
   ZERO,
   computeVipFeeRebate,
+  getVipTierMinVolume,
   getTimeID,
   getVipTier,
   strToBytes,
@@ -608,33 +609,47 @@ function updateAccumulatedVolumeFee(event: OrderSettledEvent): BigInt {
   let accumulatedVolumeFeeEntity = AccumulatedVolumeFee.load(event.params.accountId.toString());
   if (accumulatedVolumeFeeEntity == null) {
     accumulatedVolumeFeeEntity = new AccumulatedVolumeFee(event.params.accountId.toString());
+    accumulatedVolumeFeeEntity.tier = 1;
     accumulatedVolumeFeeEntity.volume = BigInt.fromI32(0);
-    accumulatedVolumeFeeEntity.fees = BigInt.fromI32(0);
+    accumulatedVolumeFeeEntity.paidFeesSinceClaimed = BigInt.fromI32(0);
+    accumulatedVolumeFeeEntity.claimableFees = BigInt.fromI32(0);
     accumulatedVolumeFeeEntity.timestamp = event.block.timestamp;
     accumulatedVolumeFeeEntity.orderIds = [];
   }
 
-  newOrderIds = accumulatedVolumeFeeEntity.orderIds;
-
   let thirtyDaysAgo = event.block.timestamp.minus(SECONDS_IN_30_DAYS);
+  newOrderIds = accumulatedVolumeFeeEntity.orderIds;
 
   while (accumulatedVolumeFeeEntity.orderIds.length > 0) {
     let firstEventId = accumulatedVolumeFeeEntity.orderIds[0];
     let oldestOrder = OrderSettled.load(firstEventId);
 
+    // Check if OlderOrder is out of the 30d rolling window
     if (oldestOrder && oldestOrder.timestamp < thirtyDaysAgo) {
       const volume = oldestOrder.sizeDelta.abs().times(oldestOrder.fillPrice).div(ETHER).abs();
       accumulatedVolumeFeeEntity.volume = accumulatedVolumeFeeEntity.volume.minus(volume);
-      accumulatedVolumeFeeEntity.fees = accumulatedVolumeFeeEntity.fees.minus(oldestOrder.totalFees);
       newOrderIds = newOrderIds.slice(1);
       accumulatedVolumeFeeEntity.orderIds = newOrderIds;
     } else {
       break;
     }
   }
-
   accumulatedVolumeFeeEntity.volume = accumulatedVolumeFeeEntity.volume.plus(newOrderVolume);
-  accumulatedVolumeFeeEntity.fees = accumulatedVolumeFeeEntity.fees.plus(newOrderFees);
+
+  const updatedTier = getVipTier(accumulatedVolumeFeeEntity.volume);
+
+  accumulatedVolumeFeeEntity.tier = updatedTier;
+  if (updatedTier === 4) {
+    accumulatedVolumeFeeEntity.remainingVolume = ZERO;
+  } else {
+    accumulatedVolumeFeeEntity.remainingVolume = getVipTierMinVolume(updatedTier + 1).minus(
+      accumulatedVolumeFeeEntity.volume,
+    );
+  }
+
+  const newOrderFeeRebate = computeVipFeeRebate(newOrderFees, updatedTier);
+  accumulatedVolumeFeeEntity.claimableFees = accumulatedVolumeFeeEntity.claimableFees.plus(newOrderFeeRebate);
+  accumulatedVolumeFeeEntity.paidFeesSinceClaimed = accumulatedVolumeFeeEntity.paidFeesSinceClaimed.plus(newOrderFees);
   newOrderIds.push(newOrderId);
   accumulatedVolumeFeeEntity.orderIds = newOrderIds;
 
