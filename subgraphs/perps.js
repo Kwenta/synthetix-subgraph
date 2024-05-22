@@ -55,8 +55,8 @@ const sepoliaConfig = {
       startBlock: 7761214,
     },
     {
-      address: '0x3eF73cD1B3B708ab1F2ccB4AcDA036Ac3FDc3615',
-      startBlock: 11786846,
+      address: '0x15725a8159629ca9763deC4211e309c94d9f5CB0',
+      startBlock: 12251035,
     },
   ],
 };
