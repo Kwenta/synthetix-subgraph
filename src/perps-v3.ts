@@ -162,6 +162,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
   order.settler = event.params.settler;
   order.txnHash = event.transaction.hash.toHex();
   order.pnl = ZERO;
+  order.blockNumber = event.block.number;
 
   const accumulatedVolume = updateAccumulatedVolumeFee(event);
   order.vipTier = getVipTier(accumulatedVolume);
