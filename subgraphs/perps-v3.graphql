@@ -227,11 +227,12 @@ type AccumulatedVolumeFee @entity {
   volume: BigInt!
   remainingVolume: BigInt!
   paidFeesSinceClaimed: BigInt!
-  claimableFees: BigInt!
+  totalFeeRebate: BigInt!
   timestamp: BigInt!
   orderIds: [String!]!
   lastClaimedAt: BigInt
   tier: Int!
+  tradesSinceClaimed: Int!
 }
 
 type FeeReimbursed @entity {

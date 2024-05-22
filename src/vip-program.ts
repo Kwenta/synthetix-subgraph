@@ -6,9 +6,9 @@ export function handleFeeReimbursed(event: FeeReimbursedEvent): void {
   const accumulatedVolumeFeeEntity = AccumulatedVolumeFee.load(event.params.accountId.toHex());
   if (accumulatedVolumeFeeEntity) {
     accumulatedVolumeFeeEntity.lastClaimedAt = event.block.timestamp;
-    // TODO: Check if this is correct. Should be Zero?
-    accumulatedVolumeFeeEntity.claimableFees = accumulatedVolumeFeeEntity.claimableFees.minus(event.params.feeRebate);
+    accumulatedVolumeFeeEntity.totalFeeRebate = accumulatedVolumeFeeEntity.totalFeeRebate.minus(event.params.feeRebate);
     accumulatedVolumeFeeEntity.paidFeesSinceClaimed = BigInt.fromI32(0);
+    accumulatedVolumeFeeEntity.tradesSinceClaimed = 0;
     accumulatedVolumeFeeEntity.save();
   }
 

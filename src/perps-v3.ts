@@ -612,7 +612,8 @@ function updateAccumulatedVolumeFee(event: OrderSettledEvent): BigInt {
     accumulatedVolumeFeeEntity.tier = 1;
     accumulatedVolumeFeeEntity.volume = BigInt.fromI32(0);
     accumulatedVolumeFeeEntity.paidFeesSinceClaimed = BigInt.fromI32(0);
-    accumulatedVolumeFeeEntity.claimableFees = BigInt.fromI32(0);
+    accumulatedVolumeFeeEntity.totalFeeRebate = BigInt.fromI32(0);
+    accumulatedVolumeFeeEntity.tradesSinceClaimed = 0;
     accumulatedVolumeFeeEntity.timestamp = event.block.timestamp;
     accumulatedVolumeFeeEntity.orderIds = [];
   }
@@ -648,8 +649,9 @@ function updateAccumulatedVolumeFee(event: OrderSettledEvent): BigInt {
   }
 
   const newOrderFeeRebate = computeVipFeeRebate(newOrderFees, updatedTier);
-  accumulatedVolumeFeeEntity.claimableFees = accumulatedVolumeFeeEntity.claimableFees.plus(newOrderFeeRebate);
+  accumulatedVolumeFeeEntity.totalFeeRebate = accumulatedVolumeFeeEntity.totalFeeRebate.plus(newOrderFeeRebate);
   accumulatedVolumeFeeEntity.paidFeesSinceClaimed = accumulatedVolumeFeeEntity.paidFeesSinceClaimed.plus(newOrderFees);
+  accumulatedVolumeFeeEntity.tradesSinceClaimed = accumulatedVolumeFeeEntity.tradesSinceClaimed + 1;
   newOrderIds.push(newOrderId);
   accumulatedVolumeFeeEntity.orderIds = newOrderIds;
 
