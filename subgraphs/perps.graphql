@@ -261,4 +261,5 @@ type OrderFlowFeeImposed @entity {
   id: ID!
   account: Bytes!
   amount: BigInt!
+  txHash: String!
 }

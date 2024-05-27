@@ -38,6 +38,10 @@ const mainnetConfig = {
       address: '0xc3d16e00833355b48d2fD69D838c6ACF004cf4b6',
       startBlock: 111335504,
     },
+    {
+      address: '0x6B32d15a6Cb77ea227A6Fb19532b2de542c45AC6',
+      startBlock: 120448500,
+    },
   ],
 };
 
@@ -53,10 +57,6 @@ const sepoliaConfig = {
     {
       address: '0xd5fE5beAa04270B32f81Bf161768c44DF9880D11',
       startBlock: 7761214,
-    },
-    {
-      address: '0x15725a8159629ca9763deC4211e309c94d9f5CB0',
-      startBlock: 12251035,
     },
   ],
 };

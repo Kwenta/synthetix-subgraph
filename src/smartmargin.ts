@@ -210,6 +210,7 @@ function handleOrderFilled<T>(event: T, priceOracle: string): void {
       futuresOrderEntity.timestamp = event.block.timestamp;
       futuresOrderEntity.priceOracle = priceOracle;
       futuresOrderEntity.fillPrice = event.params.fillPrice;
+      futuresOrderEntity.txnHash = event.transaction.hash;
 
       const smartMarginOrder = getOrCreateSmartMarginOrder(smAccountAddress, futuresOrderEntity.marketKey);
       smartMarginOrder.orderType = futuresOrderEntity.orderType;
@@ -240,10 +241,11 @@ export function handleOrderCancelled(event: ConditionalOrderCancelledEvent): voi
 export function handleOrderFlowFeeImposed(event: OrderFlowFeeImposedEvent): void {
   // handle order flow fee imposed event for smart margin account
   const smAccountAddress = event.params.account as Address;
-  const orderFlowFeeEntity = new OrderFlowFeeImposed(event.transaction.hash.toHex() + '-' + smAccountAddress.toHex());
+  const orderFlowFeeEntity = new OrderFlowFeeImposed(smAccountAddress.toHex());
 
   orderFlowFeeEntity.account = smAccountAddress;
   orderFlowFeeEntity.amount = event.params.amount;
+  orderFlowFeeEntity.txHash = event.transaction.hash.toHex();
 
   orderFlowFeeEntity.save();
 }

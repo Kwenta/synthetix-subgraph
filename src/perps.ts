@@ -1,4 +1,4 @@
-import { Address, BigInt, Bytes, log } from '@graphprotocol/graph-ts';
+import { Address, BigInt, Bytes, log, store } from '@graphprotocol/graph-ts';
 
 import {
   FuturesMarket as FuturesMarketEntity,
@@ -100,18 +100,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
   let statEntity = FuturesStat.load(account.toHex());
   let cumulativeEntity = getOrCreateCumulativeEntity();
   let marginAccountEntity = FuturesMarginAccount.load(sendingAccount.toHex() + '-' + futuresMarketAddress.toHex());
-
-  // calculated values
-  const synthetixFeePaid = event.params.fee;
-
-  // Imposed OrderFlowFee
-  const orderFlowFeeEntity = OrderFlowFeeImposed.load(event.transaction.hash.toHex() + '-' + account.toHex());
-  let orderFlowFee = ZERO;
-  if (orderFlowFeeEntity) {
-    orderFlowFee = orderFlowFeeEntity.amount;
-  }
-
-  const feesPaid = synthetixFeePaid.plus(orderFlowFee);
+  let feesPaid = event.params.fee;
 
   // each trader will have a stats entity created during their first transfer
   if (statEntity == null) {
@@ -204,6 +193,17 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
 
   // check that tradeSize is not zero to filter out margin transfers
   if (event.params.tradeSize.isZero() == false) {
+    let orderFlowFee = ZERO;
+    if (smartMarginAccount) {
+      const orderFlowFeeEntity = OrderFlowFeeImposed.load(smartMarginAccount.id.toString());
+      if (orderFlowFeeEntity) {
+        // Imposed OrderFlowFee
+        orderFlowFee = orderFlowFeeEntity.amount;
+        store.remove('OrderFlowFeeImposed', orderFlowFeeEntity.id.toString());
+      }
+    }
+
+    feesPaid = feesPaid.plus(orderFlowFee);
     let tradeEntity = new FuturesTrade(event.transaction.hash.toHex() + '-' + event.logIndex.toString());
     tradeEntity.timestamp = event.block.timestamp;
     tradeEntity.account = account;
