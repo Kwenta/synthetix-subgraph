@@ -210,7 +210,6 @@ function handleOrderFilled<T>(event: T, priceOracle: string): void {
       futuresOrderEntity.timestamp = event.block.timestamp;
       futuresOrderEntity.priceOracle = priceOracle;
       futuresOrderEntity.fillPrice = event.params.fillPrice;
-      futuresOrderEntity.txnHash = event.transaction.hash;
 
       const smartMarginOrder = getOrCreateSmartMarginOrder(smAccountAddress, futuresOrderEntity.marketKey);
       smartMarginOrder.orderType = futuresOrderEntity.orderType;
