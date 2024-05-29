@@ -391,6 +391,11 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       tradeEntity.orderType = 'Liquidation';
       tradeEntity.trackingCode = ZERO_ADDRESS;
       tradeEntity.blockNumber = event.block.number;
+
+      const accumulatedVolume = updateAccumulatedVolumeFee(event, account, tradeEntity.feesPaid);
+      tradeEntity.vipTier = getVipTier(accumulatedVolume);
+      tradeEntity.feeRebate = computeVipFeeRebate(tradeEntity.feesPaid, tradeEntity.vipTier);
+
       tradeEntity.save();
 
       // set position values
