@@ -6,25 +6,25 @@ const manifest = [];
 const currentNetwork = getCurrentNetwork();
 
 const mainnetConfig = {
-  managerStartBlock: 52456507,
+  managerStartBlock: 105932574,
   factories: [
     {
       address: '0xf1BC9852e89e0b6ABa81548A10c0afF9ACa95CaA',
-      startBlock: 89109827,
+      startBlock: 105932574,
     },
     {
       address: '0x8234F990b149Ae59416dc260305E565e5DAfEb54',
-      startBlock: 92005505,
+      startBlock: 105932574,
     },
   ],
   events: [
     {
       address: '0x64Db098EDbB149DBe99900c96CC73b6F9A1Af2db',
-      startBlock: 89109878,
+      startBlock: 105932574,
     },
     {
       address: '0x6ba8eb350c72a665b841da90f03401539e7d765f',
-      startBlock: 92005518,
+      startBlock: 105932574,
     },
     {
       address: '0x11193470df30B37Af9fc5Ec696c240D878bdfb42',

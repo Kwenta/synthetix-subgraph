@@ -10,20 +10,12 @@ const mainnetConfig = {
     address: '0x0A2AF931eFFd34b81ebcc57E3d3c9B1E1dE1C9Ce',
     startBlock: 4382,
   },
-  brevisFeeReimbursement: {
-    address: '0x2698697bbbD7a28FDF34D301F5D1e668B91F2D57',
-    startBlock: 13804815,
-  },
 };
 
 const sepoliaConfig = {
   marketProxy: {
     address: '0xf53Ca60F031FAf0E347D44FbaA4870da68250c8d',
     startBlock: 8157661,
-  },
-  brevisFeeReimbursement: {
-    address: '0x2698697bbbD7a28FDF34D301F5D1e668B91F2D57',
-    startBlock: 13804815,
   },
 };
 
@@ -132,36 +124,6 @@ manifest.push({
       {
         event: 'MarketUpdated(uint128,uint256,int256,uint256,int256,int256,int256)',
         handler: 'handleMarketUpdated',
-      },
-    ],
-  },
-});
-
-manifest.push({
-  kind: 'ethereum/contract',
-  name: 'FeeReimbursement',
-  network: currentNetwork,
-  source: {
-    address: config.brevisFeeReimbursement.address,
-    abi: 'FeeReimbursementApp',
-    startBlock: config.brevisFeeReimbursement.startBlock,
-  },
-  mapping: {
-    kind: 'ethereum/events',
-    apiVersion: '0.0.6',
-    language: 'wasm/assemblyscript',
-    file: '../src/vip-program.ts',
-    entities: ['FeeReimbursement, AccumulatedVolumeFee'],
-    abis: [
-      {
-        name: 'FeeReimbursementApp',
-        file: '../abis/FeeReimbursementApp.json',
-      },
-    ],
-    eventHandlers: [
-      {
-        event: 'FeeReimbursed(indexed address,uint128,uint248,uint32,uint32,uint64,uint64)',
-        handler: 'handleFeeReimbursed',
       },
     ],
   },

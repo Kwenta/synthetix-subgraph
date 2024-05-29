@@ -17,7 +17,6 @@ import {
   PnlSnapshot,
   MarketPriceUpdate,
   PositionLiquidation,
-  AccumulatedVolumeFee,
 } from '../generated/subgraphs/perps-v3/schema';
 import {
   AccountCreated,
@@ -38,12 +37,8 @@ import {
   FUNDING_RATE_PERIOD_TYPES,
   ONE,
   ONE_HOUR_SECONDS,
-  SECONDS_IN_30_DAYS,
   ZERO,
-  computeVipFeeRebate,
-  getVipTierMinVolume,
   getTimeID,
-  getVipTier,
   strToBytes,
 } from './lib/helpers';
 import {
@@ -162,11 +157,6 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
   order.settler = event.params.settler;
   order.txnHash = event.transaction.hash.toHex();
   order.pnl = ZERO;
-  order.blockNumber = event.block.number;
-
-  const accumulatedVolume = updateAccumulatedVolumeFee(event);
-  order.vipTier = getVipTier(accumulatedVolume);
-  order.feeRebate = computeVipFeeRebate(order.totalFees, order.vipTier);
 
   let interestChargedItem = InterestCharged.load(
     event.params.accountId.toString() + '-' + event.transaction.hash.toHex(),
@@ -599,63 +589,4 @@ export function updateAggregateStatEntities(
     aggCumulativeStats.volume = aggCumulativeStats.volume.plus(volume);
     aggCumulativeStats.save();
   }
-}
-
-function updateAccumulatedVolumeFee(event: OrderSettledEvent): BigInt {
-  const newOrderVolume = event.params.sizeDelta.abs().times(event.params.fillPrice).div(ETHER).abs();
-  const newOrderFees = event.params.totalFees;
-  const newOrderId = event.params.accountId.toString() + '-' + event.block.timestamp.toString();
-  let newOrderIds: string[];
-
-  let accumulatedVolumeFeeEntity = AccumulatedVolumeFee.load(event.params.accountId.toString());
-  if (accumulatedVolumeFeeEntity == null) {
-    accumulatedVolumeFeeEntity = new AccumulatedVolumeFee(event.params.accountId.toString());
-    accumulatedVolumeFeeEntity.tier = 1;
-    accumulatedVolumeFeeEntity.volume = BigInt.fromI32(0);
-    accumulatedVolumeFeeEntity.paidFeesSinceClaimed = BigInt.fromI32(0);
-    accumulatedVolumeFeeEntity.totalFeeRebate = BigInt.fromI32(0);
-    accumulatedVolumeFeeEntity.tradesSinceClaimed = 0;
-    accumulatedVolumeFeeEntity.timestamp = event.block.timestamp;
-    accumulatedVolumeFeeEntity.orderIds = [];
-  }
-
-  let thirtyDaysAgo = event.block.timestamp.minus(SECONDS_IN_30_DAYS);
-  newOrderIds = accumulatedVolumeFeeEntity.orderIds;
-
-  while (accumulatedVolumeFeeEntity.orderIds.length > 0) {
-    let firstEventId = accumulatedVolumeFeeEntity.orderIds[0];
-    let oldestOrder = OrderSettled.load(firstEventId);
-
-    // Check if OlderOrder is out of the 30d rolling window
-    if (oldestOrder && oldestOrder.timestamp < thirtyDaysAgo) {
-      const volume = oldestOrder.sizeDelta.abs().times(oldestOrder.fillPrice).div(ETHER).abs();
-      accumulatedVolumeFeeEntity.volume = accumulatedVolumeFeeEntity.volume.minus(volume);
-      newOrderIds = newOrderIds.slice(1);
-      accumulatedVolumeFeeEntity.orderIds = newOrderIds;
-    } else {
-      break;
-    }
-  }
-  accumulatedVolumeFeeEntity.volume = accumulatedVolumeFeeEntity.volume.plus(newOrderVolume);
-
-  const updatedTier = getVipTier(accumulatedVolumeFeeEntity.volume);
-
-  accumulatedVolumeFeeEntity.tier = updatedTier;
-  if (updatedTier === 4) {
-    accumulatedVolumeFeeEntity.remainingVolume = ZERO;
-  } else {
-    accumulatedVolumeFeeEntity.remainingVolume = getVipTierMinVolume(updatedTier + 1).minus(
-      accumulatedVolumeFeeEntity.volume,
-    );
-  }
-
-  const newOrderFeeRebate = computeVipFeeRebate(newOrderFees, updatedTier);
-  accumulatedVolumeFeeEntity.totalFeeRebate = accumulatedVolumeFeeEntity.totalFeeRebate.plus(newOrderFeeRebate);
-  accumulatedVolumeFeeEntity.paidFeesSinceClaimed = accumulatedVolumeFeeEntity.paidFeesSinceClaimed.plus(newOrderFees);
-  accumulatedVolumeFeeEntity.tradesSinceClaimed = accumulatedVolumeFeeEntity.tradesSinceClaimed + 1;
-  newOrderIds.push(newOrderId);
-  accumulatedVolumeFeeEntity.orderIds = newOrderIds;
-
-  accumulatedVolumeFeeEntity.save();
-  return accumulatedVolumeFeeEntity.volume;
 }

@@ -15,6 +15,7 @@ import {
   SmartMarginOrder,
   FundingRatePeriod,
   LastMarketTrade,
+  AccumulatedVolumeFee,
 } from '../generated/subgraphs/perps/schema';
 import {
   MarketAdded as MarketAddedEvent,
@@ -35,12 +36,16 @@ import {
 } from '../generated/subgraphs/perps/templates/PerpsMarket/PerpsV2MarketProxyable';
 import { PerpsMarket } from '../generated/subgraphs/perps/templates';
 import {
+  computeVipFeeRebate,
   DAY_SECONDS,
   ETHER,
   FUNDING_RATE_PERIOD_TYPES,
   FUNDING_RATE_PERIODS,
+  getVipTier,
+  getVipTierMinVolume,
   ONE,
   ONE_HOUR_SECONDS,
+  SECONDS_IN_30_DAYS,
   ZERO,
   ZERO_ADDRESS,
 } from './lib/helpers';
@@ -212,6 +217,11 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     tradeEntity.keeperFeesPaid = ZERO;
     tradeEntity.orderType = 'Market';
     tradeEntity.trackingCode = ZERO_ADDRESS;
+    tradeEntity.blockNumber = event.block.number;
+
+    const accumulatedVolume = updateAccumulatedVolumeFee(event, account, tradeEntity.feesPaid);
+    tradeEntity.vipTier = getVipTier(accumulatedVolume);
+    tradeEntity.feeRebate = computeVipFeeRebate(tradeEntity.feesPaid, tradeEntity.vipTier);
 
     if (marketEntity) {
       tradeEntity.asset = marketEntity.asset;
@@ -370,6 +380,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       tradeEntity.keeperFeesPaid = ZERO;
       tradeEntity.orderType = 'Liquidation';
       tradeEntity.trackingCode = ZERO_ADDRESS;
+      tradeEntity.blockNumber = event.block.number;
       tradeEntity.save();
 
       // set position values
@@ -906,4 +917,63 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
       futuresOrderEntity.save();
     }
   }
+}
+
+function updateAccumulatedVolumeFee(event: PositionModifiedEvent, account: Bytes, feesPaid: BigInt): BigInt {
+  const newTradeVolume = event.params.size.abs().times(event.params.lastPrice).div(ETHER).abs();
+  const newTradeFees = feesPaid;
+  const newTradeId = event.transaction.hash.toHex() + '-' + event.logIndex.toString();
+  let newTradeIds: string[];
+
+  let accumulatedVolumeFeeEntity = AccumulatedVolumeFee.load(account.toHexString());
+  if (accumulatedVolumeFeeEntity == null) {
+    accumulatedVolumeFeeEntity = new AccumulatedVolumeFee(account.toHexString());
+    accumulatedVolumeFeeEntity.tier = 1;
+    accumulatedVolumeFeeEntity.volume = BigInt.fromI32(0);
+    accumulatedVolumeFeeEntity.paidFeesSinceClaimed = BigInt.fromI32(0);
+    accumulatedVolumeFeeEntity.totalFeeRebate = BigInt.fromI32(0);
+    accumulatedVolumeFeeEntity.tradesSinceClaimed = 0;
+    accumulatedVolumeFeeEntity.timestamp = event.block.timestamp;
+    accumulatedVolumeFeeEntity.tradesIds = [];
+  }
+
+  let thirtyDaysAgo = event.block.timestamp.minus(SECONDS_IN_30_DAYS);
+  newTradeIds = accumulatedVolumeFeeEntity.tradesIds;
+
+  while (accumulatedVolumeFeeEntity.tradesIds.length > 0) {
+    let firstEventId = accumulatedVolumeFeeEntity.tradesIds[0];
+    let oldestTrade = FuturesTrade.load(firstEventId);
+
+    // Check if OlderOrder is out of the 30d rolling window
+    if (oldestTrade && oldestTrade.timestamp < thirtyDaysAgo) {
+      const volume = oldestTrade.size.abs().times(oldestTrade.price).div(ETHER).abs();
+      accumulatedVolumeFeeEntity.volume = accumulatedVolumeFeeEntity.volume.minus(volume);
+      newTradeIds = newTradeIds.slice(1);
+      accumulatedVolumeFeeEntity.tradesIds = newTradeIds;
+    } else {
+      break;
+    }
+  }
+  accumulatedVolumeFeeEntity.volume = accumulatedVolumeFeeEntity.volume.plus(newTradeVolume);
+
+  const updatedTier = getVipTier(accumulatedVolumeFeeEntity.volume);
+
+  accumulatedVolumeFeeEntity.tier = updatedTier;
+  if (updatedTier === 4) {
+    accumulatedVolumeFeeEntity.remainingVolume = ZERO;
+  } else {
+    accumulatedVolumeFeeEntity.remainingVolume = getVipTierMinVolume(updatedTier + 1).minus(
+      accumulatedVolumeFeeEntity.volume,
+    );
+  }
+
+  const newTradeFeeRebate = computeVipFeeRebate(newTradeFees, updatedTier);
+  accumulatedVolumeFeeEntity.totalFeeRebate = accumulatedVolumeFeeEntity.totalFeeRebate.plus(newTradeFeeRebate);
+  accumulatedVolumeFeeEntity.paidFeesSinceClaimed = accumulatedVolumeFeeEntity.paidFeesSinceClaimed.plus(newTradeFees);
+  accumulatedVolumeFeeEntity.tradesSinceClaimed = accumulatedVolumeFeeEntity.tradesSinceClaimed + 1;
+  newTradeIds.push(newTradeId);
+  accumulatedVolumeFeeEntity.tradesIds = newTradeIds;
+
+  accumulatedVolumeFeeEntity.save();
+  return accumulatedVolumeFeeEntity.volume;
 }

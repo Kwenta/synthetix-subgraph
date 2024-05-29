@@ -26,6 +26,9 @@ type FuturesTrade @entity {
   orderType: FuturesOrderType!
   trackingCode: Bytes!
   position: FuturesPosition
+  vipTier: Int
+  feeRebate: BigInt!
+  blockNumber: BigInt!
 }
 
 type FuturesPosition @entity {
@@ -255,4 +258,17 @@ type LastMarketTrade @entity {
   id: ID!
   account: Bytes!
   price: BigInt!
+}
+
+type AccumulatedVolumeFee @entity {
+  id: ID!
+  volume: BigInt!
+  remainingVolume: BigInt!
+  paidFeesSinceClaimed: BigInt!
+  totalFeeRebate: BigInt!
+  timestamp: BigInt!
+  tradesIds: [String!]!
+  lastClaimedAt: BigInt
+  tier: Int!
+  tradesSinceClaimed: Int!
 }
