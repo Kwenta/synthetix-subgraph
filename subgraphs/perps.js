@@ -38,6 +38,10 @@ const mainnetConfig = {
       address: '0xc3d16e00833355b48d2fD69D838c6ACF004cf4b6',
       startBlock: 111335504,
     },
+    {
+      address: '0x6B32d15a6Cb77ea227A6Fb19532b2de542c45AC6',
+      startBlock: 120448500,
+    },
   ],
 };
 
@@ -269,6 +273,11 @@ config.events.forEach((events, ind) => {
         {
           event: 'ConditionalOrderFilled(indexed address,indexed uint256,indexed bytes32,uint256,uint256,uint8)',
           handler: 'handleOrderV2FilledWithPriceOracle',
+        },
+        // smart margin v2.1.4
+        {
+          event: 'OrderFlowFeeImposed(indexed address,uint256)',
+          handler: 'handleOrderFlowFeeImposed',
         },
       ],
     },

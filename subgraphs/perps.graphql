@@ -272,3 +272,10 @@ type AccumulatedVolumeFee @entity {
   tier: Int!
   tradesSinceClaimed: Int!
 }
+
+type OrderFlowFeeImposed @entity {
+  id: ID!
+  account: Bytes!
+  amount: BigInt!
+  txHash: String!
+}
