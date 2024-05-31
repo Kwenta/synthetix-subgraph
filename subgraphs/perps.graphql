@@ -29,6 +29,8 @@ type FuturesTrade @entity {
   vipTier: Int
   feeRebate: BigInt!
   blockNumber: BigInt!
+  orderFeeFlowTxhash: String
+  executionTxhash: String!
 }
 
 type FuturesPosition @entity {
@@ -278,4 +280,15 @@ type OrderFlowFeeImposed @entity {
   account: Bytes!
   amount: BigInt!
   txHash: String!
+}
+
+type FeeReimbursed @entity {
+  id: ID!
+  accountId: BigInt!
+  timestamp: BigInt!
+  feeRebate: BigInt!
+  from: BigInt!
+  to: BigInt!
+  startBlockNumber: BigInt!
+  endBlockNumber: BigInt!
 }

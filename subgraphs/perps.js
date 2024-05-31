@@ -43,6 +43,11 @@ const mainnetConfig = {
       startBlock: 120448500,
     },
   ],
+  // TODO: Update
+  brevisFeeReimbursement: {
+    address: '0x2698697bbbD7a28FDF34D301F5D1e668B91F2D57',
+    startBlock: 13804815,
+  },
 };
 
 const sepoliaConfig = {
@@ -59,6 +64,11 @@ const sepoliaConfig = {
       startBlock: 7761214,
     },
   ],
+  // TODO: Update
+  brevisFeeReimbursement: {
+    address: '0x2698697bbbD7a28FDF34D301F5D1e668B91F2D57',
+    startBlock: 13804815,
+  },
 };
 
 const config = currentNetwork === 'optimism' ? mainnetConfig : sepoliaConfig;
@@ -282,6 +292,36 @@ config.events.forEach((events, ind) => {
       ],
     },
   });
+});
+
+manifest.push({
+  kind: 'ethereum/contract',
+  name: 'FeeReimbursement',
+  network: currentNetwork,
+  source: {
+    address: config.brevisFeeReimbursement.address,
+    abi: 'FeeReimbursementApp',
+    startBlock: config.brevisFeeReimbursement.startBlock,
+  },
+  mapping: {
+    kind: 'ethereum/events',
+    apiVersion: '0.0.6',
+    language: 'wasm/assemblyscript',
+    file: '../src/vip-program.ts',
+    entities: ['FeeReimbursement, AccumulatedVolumeFee'],
+    abis: [
+      {
+        name: 'FeeReimbursementApp',
+        file: '../abis/FeeReimbursementApp.json',
+      },
+    ],
+    eventHandlers: [
+      {
+        event: 'FeeReimbursed(indexed address,uint128,uint248,uint32,uint32,uint64,uint64)',
+        handler: 'handleFeeReimbursed',
+      },
+    ],
+  },
 });
 
 module.exports = {

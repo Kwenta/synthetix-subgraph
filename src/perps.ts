@@ -199,17 +199,19 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
   // check that tradeSize is not zero to filter out margin transfers
   if (event.params.tradeSize.isZero() == false) {
     let orderFlowFee = ZERO;
+    let tradeEntity = new FuturesTrade(event.transaction.hash.toHex() + '-' + event.logIndex.toString());
+
     if (smartMarginAccount) {
       const orderFlowFeeEntity = OrderFlowFeeImposed.load(smartMarginAccount.id.toString());
       if (orderFlowFeeEntity) {
         // Imposed OrderFlowFee
         orderFlowFee = orderFlowFeeEntity.amount;
+        tradeEntity.orderFeeFlowTxhash = orderFlowFeeEntity.txHash;
         store.remove('OrderFlowFeeImposed', orderFlowFeeEntity.id.toString());
       }
     }
 
     feesPaid = feesPaid.plus(orderFlowFee);
-    let tradeEntity = new FuturesTrade(event.transaction.hash.toHex() + '-' + event.logIndex.toString());
     tradeEntity.timestamp = event.block.timestamp;
     tradeEntity.account = account;
     tradeEntity.abstractAccount = sendingAccount;
@@ -228,6 +230,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     tradeEntity.orderType = 'Market';
     tradeEntity.trackingCode = ZERO_ADDRESS;
     tradeEntity.blockNumber = event.block.number;
+    tradeEntity.executionTxhash = event.transaction.hash.toHex();
 
     const accumulatedVolume = updateAccumulatedVolumeFee(event, account, tradeEntity.feesPaid);
     tradeEntity.vipTier = getVipTier(accumulatedVolume);
@@ -391,6 +394,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       tradeEntity.orderType = 'Liquidation';
       tradeEntity.trackingCode = ZERO_ADDRESS;
       tradeEntity.blockNumber = event.block.number;
+      tradeEntity.executionTxhash = event.transaction.hash.toHex();
 
       const accumulatedVolume = updateAccumulatedVolumeFee(event, account, tradeEntity.feesPaid);
       tradeEntity.vipTier = getVipTier(accumulatedVolume);
