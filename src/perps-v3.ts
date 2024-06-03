@@ -223,9 +223,9 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     positionEntity.totalTrades = BigInt.fromI32(1);
     positionEntity.entryPrice = event.params.fillPrice;
     positionEntity.lastPrice = event.params.fillPrice;
-    positionEntity.realizedPnl = ZERO;
     positionEntity.feesPaid = event.params.totalFees;
     positionEntity.netFunding = event.params.accruedFunding;
+    positionEntity.realizedPnl = positionEntity.netFunding.minus(positionEntity.feesPaid);
     positionEntity.pnlWithFeesPaid = ZERO;
     positionEntity.totalVolume = volume;
     positionEntity.totalReducedNotional = ZERO;
