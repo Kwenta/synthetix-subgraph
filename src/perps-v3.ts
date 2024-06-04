@@ -225,8 +225,8 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     positionEntity.lastPrice = event.params.fillPrice;
     positionEntity.feesPaid = event.params.totalFees;
     positionEntity.netFunding = event.params.accruedFunding;
-    positionEntity.realizedPnl = positionEntity.netFunding.minus(positionEntity.feesPaid);
-    positionEntity.pnlWithFeesPaid = ZERO;
+    positionEntity.realizedPnl = positionEntity.netFunding;
+    positionEntity.pnlWithFeesPaid = positionEntity.netFunding.minus(positionEntity.feesPaid);
     positionEntity.totalVolume = volume;
     positionEntity.totalReducedNotional = ZERO;
 
@@ -258,13 +258,6 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
 
       calculatePnl(positionEntity, order, event, statEntity);
     } else {
-      positionEntity.totalTrades = positionEntity.totalTrades.plus(BigInt.fromI32(1));
-      positionEntity.totalVolume = positionEntity.totalVolume.plus(volume);
-
-      statEntity.totalTrades = statEntity.totalTrades.plus(BigInt.fromI32(1));
-      statEntity.totalVolume = statEntity.totalVolume.plus(volume);
-      order.position = positionEntity.id;
-
       if (
         (positionEntity.size.lt(ZERO) && event.params.newSize.gt(ZERO)) ||
         (positionEntity.size.gt(ZERO) && event.params.newSize.lt(ZERO))
@@ -283,6 +276,13 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
         // Track the total amount reduced
       }
     }
+    positionEntity.totalTrades = positionEntity.totalTrades.plus(BigInt.fromI32(1));
+    positionEntity.totalVolume = positionEntity.totalVolume.plus(volume);
+
+    statEntity.totalTrades = statEntity.totalTrades.plus(BigInt.fromI32(1));
+    statEntity.totalVolume = statEntity.totalVolume.plus(volume);
+    order.position = positionEntity.id;
+
     positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.totalFees);
     positionEntity.netFunding = positionEntity.netFunding.plus(event.params.accruedFunding);
     positionEntity.size = positionEntity.size.plus(event.params.sizeDelta);
