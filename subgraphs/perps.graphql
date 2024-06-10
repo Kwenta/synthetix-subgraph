@@ -258,3 +258,10 @@ type LastMarketTrade @entity {
   account: Bytes!
   price: BigInt!
 }
+
+type OrderFlowFeeImposed @entity {
+  id: ID!
+  account: Bytes!
+  amount: BigInt!
+  txHash: String!
+}
