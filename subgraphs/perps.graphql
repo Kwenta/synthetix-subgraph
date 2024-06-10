@@ -60,6 +60,8 @@ type FuturesPosition @entity {
   avgEntryPrice: BigInt!
   lastPrice: BigInt!
   exitPrice: BigInt
+  lastTradeFundingIndex: BigInt!
+  lastTradeSize: BigInt!
 }
 
 type FuturesStat @entity {

@@ -248,6 +248,9 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
   } else {
     const tradeNotionalValue = event.params.sizeDelta.abs().times(event.params.fillPrice);
 
+    positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.totalFees);
+    positionEntity.netFunding = positionEntity.netFunding.plus(event.params.accruedFunding);
+
     if (event.params.newSize.isZero()) {
       positionEntity.isOpen = false;
       positionEntity.closeTimestamp = event.block.timestamp;
@@ -282,9 +285,6 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     statEntity.totalTrades = statEntity.totalTrades.plus(BigInt.fromI32(1));
     statEntity.totalVolume = statEntity.totalVolume.plus(volume);
     order.position = positionEntity.id;
-
-    positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.totalFees);
-    positionEntity.netFunding = positionEntity.netFunding.plus(event.params.accruedFunding);
     positionEntity.size = positionEntity.size.plus(event.params.sizeDelta);
 
     updateAggregateStatEntities(
