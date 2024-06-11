@@ -909,6 +909,9 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
           statEntity.feesPaid = statEntity.feesPaid.plus(event.params.keeperDeposit);
           if (positionEntity) {
             positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.keeperDeposit);
+            positionEntity.pnlWithFeesPaid = positionEntity.pnl
+              .minus(positionEntity.feesPaid)
+              .plus(positionEntity.netFunding);
             positionEntity.save();
           }
 
