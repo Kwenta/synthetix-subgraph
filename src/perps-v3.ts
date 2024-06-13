@@ -223,12 +223,13 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     positionEntity.totalTrades = BigInt.fromI32(1);
     positionEntity.entryPrice = event.params.fillPrice;
     positionEntity.lastPrice = event.params.fillPrice;
-    positionEntity.realizedPnl = ZERO;
     positionEntity.feesPaid = event.params.totalFees;
     positionEntity.netFunding = event.params.accruedFunding;
-    positionEntity.pnlWithFeesPaid = ZERO;
+    positionEntity.realizedPnl = positionEntity.netFunding;
+    positionEntity.pnlWithFeesPaid = positionEntity.netFunding.minus(positionEntity.feesPaid);
     positionEntity.totalVolume = volume;
     positionEntity.totalReducedNotional = ZERO;
+    positionEntity.interestCharged = ZERO;
 
     updateAggregateStatEntities(
       positionEntity.marketId,
@@ -248,6 +249,9 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
   } else {
     const tradeNotionalValue = event.params.sizeDelta.abs().times(event.params.fillPrice);
 
+    positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.totalFees);
+    positionEntity.netFunding = positionEntity.netFunding.plus(event.params.accruedFunding);
+
     if (event.params.newSize.isZero()) {
       positionEntity.isOpen = false;
       positionEntity.closeTimestamp = event.block.timestamp;
@@ -258,13 +262,6 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
 
       calculatePnl(positionEntity, order, event, statEntity);
     } else {
-      positionEntity.totalTrades = positionEntity.totalTrades.plus(BigInt.fromI32(1));
-      positionEntity.totalVolume = positionEntity.totalVolume.plus(volume);
-
-      statEntity.totalTrades = statEntity.totalTrades.plus(BigInt.fromI32(1));
-      statEntity.totalVolume = statEntity.totalVolume.plus(volume);
-      order.position = positionEntity.id;
-
       if (
         (positionEntity.size.lt(ZERO) && event.params.newSize.gt(ZERO)) ||
         (positionEntity.size.gt(ZERO) && event.params.newSize.lt(ZERO))
@@ -283,8 +280,12 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
         // Track the total amount reduced
       }
     }
-    positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.totalFees);
-    positionEntity.netFunding = positionEntity.netFunding.plus(event.params.accruedFunding);
+    positionEntity.totalTrades = positionEntity.totalTrades.plus(BigInt.fromI32(1));
+    positionEntity.totalVolume = positionEntity.totalVolume.plus(volume);
+
+    statEntity.totalTrades = statEntity.totalTrades.plus(BigInt.fromI32(1));
+    statEntity.totalVolume = statEntity.totalVolume.plus(volume);
+    order.position = positionEntity.id;
     positionEntity.size = positionEntity.size.plus(event.params.sizeDelta);
 
     updateAggregateStatEntities(
@@ -516,6 +517,7 @@ function calculatePnl(
   if (order.interestCharged !== null) {
     interestCharged = order.interestCharged!;
   }
+  position.interestCharged = position.interestCharged.plus(interestCharged);
   position.realizedPnl = position.realizedPnl.plus(pnl);
   position.pnlWithFeesPaid = position.realizedPnl
     .minus(position.feesPaid)
