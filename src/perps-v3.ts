@@ -229,6 +229,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     positionEntity.pnlWithFeesPaid = positionEntity.netFunding.minus(positionEntity.feesPaid);
     positionEntity.totalVolume = volume;
     positionEntity.totalReducedNotional = ZERO;
+    positionEntity.interestCharged = ZERO;
 
     updateAggregateStatEntities(
       positionEntity.marketId,
@@ -516,6 +517,7 @@ function calculatePnl(
   if (order.interestCharged !== null) {
     interestCharged = order.interestCharged!;
   }
+  position.interestCharged = position.interestCharged.plus(interestCharged);
   position.realizedPnl = position.realizedPnl.plus(pnl);
   position.pnlWithFeesPaid = position.realizedPnl
     .minus(position.feesPaid)
