@@ -92,6 +92,7 @@ type PerpsV3Position @entity {
   avgEntryPrice: BigInt!
   lastPrice: BigInt!
   exitPrice: BigInt
+  interestCharged: BigInt!
 }
 
 type OpenPerpsV3Position @entity {

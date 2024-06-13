@@ -147,6 +147,8 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     positionEntity.totalDeposits = ZERO;
     positionEntity.totalVolume = ZERO;
     positionEntity.fundingIndex = event.params.fundingIndex;
+    positionEntity.lastTradeFundingIndex = event.params.fundingIndex;
+    positionEntity.lastTradeSize = event.params.size;
   }
 
   // if there is an existing position, add funding accrued
@@ -232,6 +234,26 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     } else {
       tradeEntity.positionClosed = false;
     }
+
+    if (positionEntity.lastTradeFundingIndex != event.params.fundingIndex) {
+      let pastTradeFundingEntity = FundingRateUpdate.load(
+        futuresMarketAddress.toHex() + '-' + positionEntity.lastTradeFundingIndex.toString(),
+      );
+
+      let currentTradeFundingEntity = FundingRateUpdate.load(
+        futuresMarketAddress.toHex() + '-' + event.params.fundingIndex.toString(),
+      );
+
+      if (pastTradeFundingEntity && currentTradeFundingEntity) {
+        tradeEntity.fundingAccrued = currentTradeFundingEntity.funding
+          .minus(pastTradeFundingEntity.funding)
+          .times(positionEntity.lastTradeSize)
+          .div(ETHER);
+      }
+    }
+
+    positionEntity.lastTradeFundingIndex = event.params.fundingIndex;
+    positionEntity.lastTradeSize = event.params.size;
 
     // update pnl and avg entry price
     // if the position is closed during this transaction...
@@ -887,6 +909,9 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
           statEntity.feesPaid = statEntity.feesPaid.plus(event.params.keeperDeposit);
           if (positionEntity) {
             positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.keeperDeposit);
+            positionEntity.pnlWithFeesPaid = positionEntity.pnl
+              .minus(positionEntity.feesPaid)
+              .plus(positionEntity.netFunding);
             positionEntity.save();
           }
 
