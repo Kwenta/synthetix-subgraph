@@ -924,11 +924,24 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
 
         // add fee if not self-executed
         if (futuresOrderEntity.keeper != futuresOrderEntity.account) {
-          tradeEntity.feesPaid = tradeEntity.feesPaid.plus(event.params.keeperDeposit);
+          let orderFlowFee = ZERO;
+
+          if (smartMarginAccount) {
+            const orderFlowFeeEntity = OrderFlowFeeImposed.load(smartMarginAccount.id.toString());
+            if (orderFlowFeeEntity) {
+              // Imposed OrderFlowFee
+              orderFlowFee = orderFlowFeeEntity.amount;
+              tradeEntity.orderFeeFlowTxhash = orderFlowFeeEntity.txHash;
+              store.remove('OrderFlowFeeImposed', orderFlowFeeEntity.id.toString());
+            }
+          }
+
+          tradeEntity.feesPaid = tradeEntity.feesPaid.plus(event.params.keeperDeposit).plus(orderFlowFee);
+          tradeEntity.orderFeeFlowTxhash = event.transaction.hash.toHex();
           tradeEntity.keeperFeesPaid = event.params.keeperDeposit;
-          statEntity.feesPaid = statEntity.feesPaid.plus(event.params.keeperDeposit);
+          statEntity.feesPaid = statEntity.feesPaid.plus(event.params.keeperDeposit).plus(orderFlowFee);
           if (positionEntity) {
-            positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.keeperDeposit);
+            positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.keeperDeposit).plus(orderFlowFee);
             positionEntity.pnlWithFeesPaid = positionEntity.pnl
               .minus(positionEntity.feesPaid)
               .plus(positionEntity.netFunding);
