@@ -274,6 +274,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
         // If ths positions size is increasing then recalculate the average entry price
         const existingNotionalValue = positionEntity.size.abs().times(positionEntity.avgEntryPrice);
         positionEntity.avgEntryPrice = existingNotionalValue.plus(tradeNotionalValue).div(event.params.newSize.abs());
+        positionEntity.pnlWithFeesPaid = positionEntity.netFunding.minus(positionEntity.feesPaid);
       } else {
         // If decreasing calc the pnl
         calculatePnl(positionEntity, order, event, statEntity);
