@@ -276,30 +276,17 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
         positionEntity.avgEntryPrice = existingNotionalValue.plus(tradeNotionalValue).div(event.params.newSize.abs());
 
         let interestCharged = order.interestCharged !== null ? order.interestCharged! : ZERO;
-        let pnl = event.params.accruedFunding.minus(event.params.totalFees).plus(interestCharged);
 
-        order.pnl = order.pnl.plus(pnl);
         positionEntity.interestCharged = positionEntity.interestCharged.plus(interestCharged);
         positionEntity.pnlWithFeesPaid = positionEntity.realizedPnl
           .minus(positionEntity.feesPaid)
           .plus(positionEntity.netFunding)
           .plus(interestCharged);
-        positionEntity.realizedPnl = positionEntity.realizedPnl.plus(pnl);
 
-        statEntity.pnl = statEntity.pnl.plus(pnl);
         statEntity.pnlWithFeesPaid = statEntity.pnlWithFeesPaid
-          .plus(pnl)
           .minus(order.totalFees)
           .plus(order.accruedFunding)
           .plus(interestCharged);
-
-        let pnlSnapshot = new PnlSnapshot(
-          positionEntity.id + '-' + event.block.timestamp.toString() + '-' + event.transaction.hash.toHex(),
-        );
-        pnlSnapshot.pnl = statEntity.pnl;
-        pnlSnapshot.accountId = positionEntity.accountId;
-        pnlSnapshot.timestamp = event.block.timestamp;
-        pnlSnapshot.save();
       } else {
         // If decreasing calc the pnl
         calculatePnl(positionEntity, order, event, statEntity);
