@@ -245,6 +245,7 @@ export function handleOrderFlowFeeImposed(event: OrderFlowFeeImposedEvent): void
   orderFlowFeeEntity.account = smAccountAddress;
   orderFlowFeeEntity.amount = event.params.amount;
   orderFlowFeeEntity.txHash = event.transaction.hash.toHex();
+  orderFlowFeeEntity.timestamp = event.block.timestamp;
 
   orderFlowFeeEntity.save();
 }

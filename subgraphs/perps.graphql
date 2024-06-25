@@ -282,6 +282,7 @@ type OrderFlowFeeImposed @entity {
   account: Bytes!
   amount: BigInt!
   txHash: String!
+  timestamp: BigInt!
 }
 
 type FeeReimbursed @entity {
