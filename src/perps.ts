@@ -42,6 +42,7 @@ import {
   ETHER,
   FUNDING_RATE_PERIOD_TYPES,
   FUNDING_RATE_PERIODS,
+  getOrderFlowFeeAmount,
   getVipTier,
   getVipTierMinVolume,
   ONE,
@@ -204,7 +205,10 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     let tradeEntity = new FuturesTrade(event.transaction.hash.toHex() + '-' + event.logIndex.toString());
 
     if (smartMarginAccount) {
-      const orderFlowFeeEntity = OrderFlowFeeImposed.load(smartMarginAccount.id.toString());
+      const orderFlowFeeAmount = getOrderFlowFeeAmount(tradeEntity.size);
+      const orderFlowFeeEntity = OrderFlowFeeImposed.load(
+        smartMarginAccount.id.toString() + '-' + orderFlowFeeAmount.toHex(),
+      );
       if (orderFlowFeeEntity) {
         // Imposed OrderFlowFee
         orderFlowFee = orderFlowFeeEntity.amount;
@@ -927,7 +931,10 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
           let orderFlowFee = ZERO;
 
           if (smartMarginAccount) {
-            const orderFlowFeeEntity = OrderFlowFeeImposed.load(smartMarginAccount.id.toString());
+            const orderFlowFeeAmount = getOrderFlowFeeAmount(tradeEntity.size);
+            const orderFlowFeeEntity = OrderFlowFeeImposed.load(
+              smartMarginAccount.id.toString() + '-' + orderFlowFeeAmount.toHex(),
+            );
             if (orderFlowFeeEntity) {
               // Imposed OrderFlowFee
               orderFlowFee = orderFlowFeeEntity.amount;

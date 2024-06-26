@@ -18,6 +18,8 @@ export let YEAR_SECONDS = BigInt.fromI32(31556736);
 
 export let BPS_CONVERSION = BigInt.fromI32(10000);
 
+export let ORDER_FLOW_FEE = BigInt.fromI32(5);
+
 export let CANDLE_PERIODS: BigInt[] = [
   DAY_SECONDS.times(BigInt.fromI32(30)),
   DAY_SECONDS.times(BigInt.fromI32(7)),
@@ -107,4 +109,8 @@ export function getVipTier(accumulatedVolume: BigInt): i32 {
   } else {
     return 1;
   }
+}
+
+export function getOrderFlowFeeAmount(size: BigInt): BigInt {
+  return size.times(ORDER_FLOW_FEE).div(BigInt.fromI32(100000));
 }

@@ -240,7 +240,7 @@ export function handleOrderCancelled(event: ConditionalOrderCancelledEvent): voi
 export function handleOrderFlowFeeImposed(event: OrderFlowFeeImposedEvent): void {
   // handle order flow fee imposed event for smart margin account
   const smAccountAddress = event.params.account as Address;
-  const orderFlowFeeEntity = new OrderFlowFeeImposed(smAccountAddress.toHex());
+  const orderFlowFeeEntity = new OrderFlowFeeImposed(smAccountAddress.toHex() + '-' + event.params.amount.toHex());
 
   orderFlowFeeEntity.account = smAccountAddress;
   orderFlowFeeEntity.amount = event.params.amount;
