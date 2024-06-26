@@ -399,20 +399,8 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       const newPositionPnl = newPositionPnlWithFeesPaid.plus(positionEntity.feesPaid).minus(positionEntity.netFunding);
       const newTradePnl = newPositionPnl.minus(positionEntity.pnl);
 
-      let orderFlowFee = ZERO;
-      if (smartMarginAccount) {
-        const orderFlowFeeEntity = OrderFlowFeeImposed.load(smartMarginAccount.id.toString());
-        if (orderFlowFeeEntity) {
-          // Imposed OrderFlowFee
-          orderFlowFee = orderFlowFeeEntity.amount;
-          tradeEntity.orderFeeFlowTxhash = orderFlowFeeEntity.txHash;
-          store.remove('OrderFlowFeeImposed', orderFlowFeeEntity.id.toString());
-        }
-      }
-
       // temporarily set the pnl to the difference in the position pnl
       // we will add liquidation fees during the PositionLiquidated handler
-      feesPaid = feesPaid.plus(orderFlowFee);
       tradeEntity.margin = ZERO;
       tradeEntity.size = ZERO;
       tradeEntity.asset = positionEntity.asset;
