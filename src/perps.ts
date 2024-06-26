@@ -1023,7 +1023,7 @@ function updateAccumulatedVolumeFee(event: PositionModifiedEvent, account: Bytes
   const updatedTier = getVipTier(accumulatedVolumeFeeEntity.volume);
 
   accumulatedVolumeFeeEntity.tier = updatedTier;
-  if (updatedTier === 4) {
+  if (updatedTier === 5) {
     accumulatedVolumeFeeEntity.remainingVolume = ZERO;
   } else {
     accumulatedVolumeFeeEntity.remainingVolume = getVipTierMinVolume(updatedTier + 1).minus(

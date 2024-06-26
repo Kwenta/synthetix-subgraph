@@ -77,14 +77,15 @@ export function getLatestRate(synth: string, txHash: string): BigDecimal | null 
 export const SECONDS_IN_30_DAYS = BigInt.fromI32(30 * 24 * 60 * 60);
 
 export const VIP_TIER_REBATE = [
-  [BigInt.fromI32(0).times(ETHER), BigInt.fromI32(10)],
-  [BigInt.fromI32(1000000).times(ETHER), BigInt.fromI32(40)],
-  [BigInt.fromI32(10000000).times(ETHER), BigInt.fromI32(75)],
-  [BigInt.fromI32(100000000).times(ETHER), BigInt.fromI32(90)],
+  [BigInt.fromI32(0).times(ETHER), BigInt.fromI32(0)],
+  [BigInt.fromI32(1000000).times(ETHER), BigInt.fromI32(5)],
+  [BigInt.fromI32(10000000).times(ETHER), BigInt.fromI32(10)],
+  [BigInt.fromI32(100000000).times(ETHER), BigInt.fromI32(20)],
+  [BigInt.fromI32(1000000000).times(ETHER), BigInt.fromI32(30)],
 ];
 
 export function getVipTierMinVolume(tier: i32): BigInt {
-  if (tier != 1 && tier != 2 && tier != 3 && tier != 4) {
+  if (tier != 1 && tier != 2 && tier != 3 && tier != 4 && tier != 5) {
     return ZERO;
   }
 
@@ -92,7 +93,7 @@ export function getVipTierMinVolume(tier: i32): BigInt {
 }
 
 export function computeVipFeeRebate(fees: BigInt, tier: i32): BigInt {
-  if (tier != 1 && tier != 2 && tier != 3 && tier != 4) {
+  if (tier != 1 && tier != 2 && tier != 3 && tier != 4 && tier != 5) {
     return ZERO;
   }
 
@@ -100,14 +101,18 @@ export function computeVipFeeRebate(fees: BigInt, tier: i32): BigInt {
 }
 
 export function getVipTier(accumulatedVolume: BigInt): i32 {
-  if (accumulatedVolume > getVipTierMinVolume(4)) {
+  if (accumulatedVolume > getVipTierMinVolume(5)) {
+    return 5;
+  } else if (accumulatedVolume > getVipTierMinVolume(4)) {
     return 4;
-  } else if (accumulatedVolume > getVipTierMinVolume(3) && accumulatedVolume <= getVipTierMinVolume(4)) {
+  } else if (accumulatedVolume > getVipTierMinVolume(3)) {
     return 3;
-  } else if (accumulatedVolume > getVipTierMinVolume(2) && accumulatedVolume <= getVipTierMinVolume(3)) {
+  } else if (accumulatedVolume > getVipTierMinVolume(2)) {
     return 2;
-  } else {
+  } else if (accumulatedVolume > getVipTierMinVolume(1)) {
     return 1;
+  } else {
+    return 0;
   }
 }
 
