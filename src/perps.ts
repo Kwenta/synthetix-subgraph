@@ -205,15 +205,14 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     let tradeEntity = new FuturesTrade(event.transaction.hash.toHex() + '-' + event.logIndex.toString());
 
     if (smartMarginAccount) {
-      const orderFlowFeeAmount = getOrderFlowFeeAmount(tradeEntity.size);
-      const orderFlowFeeEntity = OrderFlowFeeImposed.load(
-        smartMarginAccount.id.toString() + '-' + orderFlowFeeAmount.toHex(),
-      );
+      const orderFlowFeeAmount = getOrderFlowFeeAmount(event.params.tradeSize);
+      const orderFlowFeeId = smartMarginAccount.id.toString() + '-' + orderFlowFeeAmount.toHex();
+      const orderFlowFeeEntity = OrderFlowFeeImposed.load(orderFlowFeeId);
       if (orderFlowFeeEntity) {
         // Imposed OrderFlowFee
         orderFlowFee = orderFlowFeeEntity.amount;
         tradeEntity.orderFeeFlowTxhash = orderFlowFeeEntity.txHash;
-        store.remove('OrderFlowFeeImposed', orderFlowFeeEntity.id.toString());
+        store.remove('OrderFlowFeeImposed', orderFlowFeeId);
       }
     }
 
@@ -420,12 +419,9 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       tradeEntity.orderType = 'Liquidation';
       tradeEntity.trackingCode = ZERO_ADDRESS;
       tradeEntity.blockNumber = event.block.number;
+      tradeEntity.vipTier = 0;
+      tradeEntity.feeRebate = ZERO;
       tradeEntity.executionTxhash = event.transaction.hash.toHex();
-
-      const accumulatedVolume = updateAccumulatedVolumeFee(event, account, tradeEntity.feesPaid);
-      tradeEntity.vipTier = getVipTier(accumulatedVolume);
-      tradeEntity.feeRebate = computeVipFeeRebate(tradeEntity.feesPaid, tradeEntity.vipTier);
-
       tradeEntity.save();
 
       // set position values
@@ -932,14 +928,13 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
 
           if (smartMarginAccount) {
             const orderFlowFeeAmount = getOrderFlowFeeAmount(tradeEntity.size);
-            const orderFlowFeeEntity = OrderFlowFeeImposed.load(
-              smartMarginAccount.id.toString() + '-' + orderFlowFeeAmount.toHex(),
-            );
+            const orderFlowFeeId = smartMarginAccount.id.toString() + '-' + orderFlowFeeAmount.toHex();
+            const orderFlowFeeEntity = OrderFlowFeeImposed.load(orderFlowFeeId);
             if (orderFlowFeeEntity) {
               // Imposed OrderFlowFee
               orderFlowFee = orderFlowFeeEntity.amount;
               tradeEntity.orderFeeFlowTxhash = orderFlowFeeEntity.txHash;
-              store.remove('OrderFlowFeeImposed', orderFlowFeeEntity.id.toString());
+              store.remove('OrderFlowFeeImposed', orderFlowFeeId);
             }
           }
 
@@ -992,7 +987,7 @@ function updateAccumulatedVolumeFee(event: PositionModifiedEvent, account: Bytes
   let accumulatedVolumeFeeEntity = AccumulatedVolumeFee.load(account.toHexString());
   if (accumulatedVolumeFeeEntity == null) {
     accumulatedVolumeFeeEntity = new AccumulatedVolumeFee(account.toHexString());
-    accumulatedVolumeFeeEntity.tier = 1;
+    accumulatedVolumeFeeEntity.tier = 0;
     accumulatedVolumeFeeEntity.volume = BigInt.fromI32(0);
     accumulatedVolumeFeeEntity.paidFeesSinceClaimed = BigInt.fromI32(0);
     accumulatedVolumeFeeEntity.totalFeeRebate = BigInt.fromI32(0);

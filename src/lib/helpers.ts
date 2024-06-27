@@ -85,25 +85,23 @@ export const VIP_TIER_REBATE = [
 ];
 
 export function getVipTierMinVolume(tier: i32): BigInt {
-  if (tier != 1 && tier != 2 && tier != 3 && tier != 4 && tier != 5) {
+  if (tier > 4 || tier < 1) {
     return ZERO;
   }
 
-  return VIP_TIER_REBATE[tier - 1][0];
+  return VIP_TIER_REBATE[tier][0];
 }
 
 export function computeVipFeeRebate(fees: BigInt, tier: i32): BigInt {
-  if (tier != 1 && tier != 2 && tier != 3 && tier != 4 && tier != 5) {
+  if (tier > 4 || tier < 1) {
     return ZERO;
   }
 
-  return fees.times(VIP_TIER_REBATE[tier - 1][1]).div(BigInt.fromI32(100));
+  return fees.times(VIP_TIER_REBATE[tier][1]).div(BigInt.fromI32(100));
 }
 
 export function getVipTier(accumulatedVolume: BigInt): i32 {
-  if (accumulatedVolume > getVipTierMinVolume(5)) {
-    return 5;
-  } else if (accumulatedVolume > getVipTierMinVolume(4)) {
+  if (accumulatedVolume > getVipTierMinVolume(4)) {
     return 4;
   } else if (accumulatedVolume > getVipTierMinVolume(3)) {
     return 3;
