@@ -922,28 +922,38 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
           smartMarginOrderEntity.save();
         }
 
+        let orderFlowFee = ZERO;
+
+        if (smartMarginAccount) {
+          const orderFlowFeeAmount = getOrderFlowFeeAmount(tradeEntity.size);
+          const orderFlowFeeId = smartMarginAccount.id.toString() + '-' + orderFlowFeeAmount.toHex();
+          const orderFlowFeeEntity = OrderFlowFeeImposed.load(orderFlowFeeId);
+          if (orderFlowFeeEntity) {
+            // Imposed OrderFlowFee
+            orderFlowFee = orderFlowFeeEntity.amount;
+            tradeEntity.orderFeeFlowTxhash = orderFlowFeeEntity.txHash;
+            store.remove('OrderFlowFeeImposed', orderFlowFeeId);
+          }
+        }
+        tradeEntity.feesPaid = tradeEntity.feesPaid.plus(orderFlowFee);
+        statEntity.feesPaid = statEntity.feesPaid.plus(orderFlowFee);
+        statEntity.save();
+
+        if (positionEntity) {
+          positionEntity.feesPaid = positionEntity.feesPaid.plus(orderFlowFee);
+          positionEntity.pnlWithFeesPaid = positionEntity.pnl
+            .minus(positionEntity.feesPaid)
+            .plus(positionEntity.netFunding);
+          positionEntity.save();
+        }
+
         // add fee if not self-executed
         if (futuresOrderEntity.keeper != futuresOrderEntity.account) {
-          let orderFlowFee = ZERO;
-
-          if (smartMarginAccount) {
-            const orderFlowFeeAmount = getOrderFlowFeeAmount(tradeEntity.size);
-            const orderFlowFeeId = smartMarginAccount.id.toString() + '-' + orderFlowFeeAmount.toHex();
-            const orderFlowFeeEntity = OrderFlowFeeImposed.load(orderFlowFeeId);
-            if (orderFlowFeeEntity) {
-              // Imposed OrderFlowFee
-              orderFlowFee = orderFlowFeeEntity.amount;
-              tradeEntity.orderFeeFlowTxhash = orderFlowFeeEntity.txHash;
-              store.remove('OrderFlowFeeImposed', orderFlowFeeId);
-            }
-          }
-
-          tradeEntity.feesPaid = tradeEntity.feesPaid.plus(event.params.keeperDeposit).plus(orderFlowFee);
-          tradeEntity.orderFeeFlowTxhash = event.transaction.hash.toHex();
+          tradeEntity.feesPaid = tradeEntity.feesPaid.plus(event.params.keeperDeposit);
           tradeEntity.keeperFeesPaid = event.params.keeperDeposit;
-          statEntity.feesPaid = statEntity.feesPaid.plus(event.params.keeperDeposit).plus(orderFlowFee);
+          statEntity.feesPaid = statEntity.feesPaid.plus(event.params.keeperDeposit);
           if (positionEntity) {
-            positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.keeperDeposit).plus(orderFlowFee);
+            positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.keeperDeposit);
             positionEntity.pnlWithFeesPaid = positionEntity.pnl
               .minus(positionEntity.feesPaid)
               .plus(positionEntity.netFunding);
