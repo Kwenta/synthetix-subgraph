@@ -204,16 +204,13 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     let orderFlowFee = ZERO;
     let tradeEntity = new FuturesTrade(event.transaction.hash.toHex() + '-' + event.logIndex.toString());
 
-    if (smartMarginAccount) {
-      const orderFlowFeeAmount = getOrderFlowFeeAmount(event.params.tradeSize);
-      const orderFlowFeeId = smartMarginAccount.id.toString() + '-' + orderFlowFeeAmount.toHex();
-      const orderFlowFeeEntity = OrderFlowFeeImposed.load(orderFlowFeeId);
-      if (orderFlowFeeEntity) {
-        // Imposed OrderFlowFee
-        orderFlowFee = orderFlowFeeEntity.amount;
-        tradeEntity.orderFeeFlowTxhash = orderFlowFeeEntity.txHash;
-        store.remove('OrderFlowFeeImposed', orderFlowFeeId);
-      }
+    const orderFlowFeeId = account.toHexString() + '-' + futuresMarketAddress.toHexString();
+    const orderFlowFeeEntity = OrderFlowFeeImposed.load(orderFlowFeeId);
+    if (orderFlowFeeEntity) {
+      // Imposed OrderFlowFee
+      orderFlowFee = orderFlowFeeEntity.amount;
+      tradeEntity.orderFeeFlowTxhash = orderFlowFeeEntity.txHash;
+      store.remove('OrderFlowFeeImposed', orderFlowFeeId);
     }
 
     feesPaid = feesPaid.plus(orderFlowFee);
@@ -845,6 +842,19 @@ export function handleDelayedOrderSubmitted(event: DelayedOrderSubmittedEvent): 
   let smartMarginAccount = SmartMarginAccount.load(sendingAccount.toHex());
   const account = smartMarginAccount ? smartMarginAccount.owner : sendingAccount;
 
+  const orderFlowFeeEntity = OrderFlowFeeImposed.load(account.toHexString() + '-' + event.transaction.hash.toHex());
+  if (orderFlowFeeEntity) {
+    const newOrderFlowFeeEntity = new OrderFlowFeeImposed(
+      account.toHexString() + '-' + futuresMarketAddress.toHexString(),
+    );
+    newOrderFlowFeeEntity.amount = orderFlowFeeEntity.amount;
+    newOrderFlowFeeEntity.txHash = event.transaction.hash.toHexString();
+    newOrderFlowFeeEntity.timestamp = event.block.timestamp;
+    newOrderFlowFeeEntity.account = account;
+    newOrderFlowFeeEntity.save();
+    store.remove('OrderFlowFeeImposed', account.toHexString() + '-' + event.transaction.hash.toHex());
+  }
+
   let marketEntity = FuturesMarketEntity.load(futuresMarketAddress.toHex());
   if (marketEntity) {
     let marketAsset = marketEntity.asset;
@@ -924,16 +934,13 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
 
         let orderFlowFee = ZERO;
 
-        if (smartMarginAccount) {
-          const orderFlowFeeAmount = getOrderFlowFeeAmount(tradeEntity.size);
-          const orderFlowFeeId = smartMarginAccount.id.toString() + '-' + orderFlowFeeAmount.toHex();
-          const orderFlowFeeEntity = OrderFlowFeeImposed.load(orderFlowFeeId);
-          if (orderFlowFeeEntity) {
-            // Imposed OrderFlowFee
-            orderFlowFee = orderFlowFeeEntity.amount;
-            tradeEntity.orderFeeFlowTxhash = orderFlowFeeEntity.txHash;
-            store.remove('OrderFlowFeeImposed', orderFlowFeeId);
-          }
+        const orderFlowFeeId = account.toHexString() + '-' + futuresMarketAddress.toHexString();
+        const orderFlowFeeEntity = OrderFlowFeeImposed.load(orderFlowFeeId);
+        if (orderFlowFeeEntity) {
+          // Imposed OrderFlowFee
+          orderFlowFee = orderFlowFeeEntity.amount;
+          tradeEntity.orderFeeFlowTxhash = orderFlowFeeEntity.txHash;
+          store.remove('OrderFlowFeeImposed', orderFlowFeeId);
         }
         tradeEntity.feesPaid = tradeEntity.feesPaid.plus(orderFlowFee);
         statEntity.feesPaid = statEntity.feesPaid.plus(orderFlowFee);

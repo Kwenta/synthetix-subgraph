@@ -283,6 +283,7 @@ type OrderFlowFeeImposed @entity {
   amount: BigInt!
   txHash: String!
   timestamp: BigInt!
+  futuresMarketAddress: String
 }
 
 type FeeReimbursed @entity {

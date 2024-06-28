@@ -115,5 +115,5 @@ export function getVipTier(accumulatedVolume: BigInt): i32 {
 }
 
 export function getOrderFlowFeeAmount(size: BigInt): BigInt {
-  return size.times(ORDER_FLOW_FEE).div(BigInt.fromI32(100000));
+  return size.abs().times(ORDER_FLOW_FEE).div(BigInt.fromI32(100000));
 }
