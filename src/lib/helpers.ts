@@ -76,6 +76,8 @@ export function getLatestRate(synth: string, txHash: string): BigDecimal | null 
 
 export const SECONDS_IN_30_DAYS = BigInt.fromI32(30 * 24 * 60 * 60);
 
+export const VIP_STARTING_BLOCK = BigInt.fromI32(120800612); // Jun-01-2024 12:00:01 AM +UTC
+
 export const VIP_TIER_REBATE = [
   [BigInt.fromI32(0).times(ETHER), BigInt.fromI32(0)],
   [BigInt.fromI32(1000000).times(ETHER), BigInt.fromI32(5)],

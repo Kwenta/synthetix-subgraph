@@ -42,12 +42,12 @@ import {
   ETHER,
   FUNDING_RATE_PERIOD_TYPES,
   FUNDING_RATE_PERIODS,
-  getOrderFlowFeeAmount,
   getVipTier,
   getVipTierMinVolume,
   ONE,
   ONE_HOUR_SECONDS,
   SECONDS_IN_30_DAYS,
+  VIP_STARTING_BLOCK,
   ZERO,
   ZERO_ADDRESS,
 } from './lib/helpers';
@@ -996,6 +996,10 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
 }
 
 function updateAccumulatedVolumeFee(event: PositionModifiedEvent, account: Bytes, feesPaid: BigInt): BigInt {
+  if (event.block.number < VIP_STARTING_BLOCK) {
+    return ZERO;
+  }
+
   const newTradeVolume = event.params.tradeSize.abs().times(event.params.lastPrice).div(ETHER).abs();
   const newTradeFees = feesPaid;
   const newTradeId = event.transaction.hash.toHex() + '-' + event.logIndex.toString();
