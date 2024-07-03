@@ -275,6 +275,7 @@ type AccumulatedVolumeFee @entity {
   lastClaimedAt: BigInt
   tier: Int!
   tradesSinceClaimed: Int!
+  allTimeRebates: BigInt!
 }
 
 type OrderFlowFeeImposed @entity {

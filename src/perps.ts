@@ -1015,6 +1015,7 @@ function updateAccumulatedVolumeFee(event: PositionModifiedEvent, account: Bytes
     accumulatedVolumeFeeEntity.tradesSinceClaimed = 0;
     accumulatedVolumeFeeEntity.timestamp = event.block.timestamp;
     accumulatedVolumeFeeEntity.tradesIds = [];
+    accumulatedVolumeFeeEntity.allTimeRebates = ZERO;
   }
 
   let thirtyDaysAgo = event.block.timestamp.minus(SECONDS_IN_30_DAYS);

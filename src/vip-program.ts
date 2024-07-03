@@ -5,6 +5,7 @@ import { AccumulatedVolumeFee, FeeReimbursed } from '../generated/subgraphs/perp
 export function handleFeeReimbursed(event: FeeReimbursedEvent): void {
   const accumulatedVolumeFeeEntity = AccumulatedVolumeFee.load(event.params.accountId.toHex());
   if (accumulatedVolumeFeeEntity) {
+    accumulatedVolumeFeeEntity.allTimeRebates = accumulatedVolumeFeeEntity.allTimeRebates.plus(event.params.feeRebate);
     accumulatedVolumeFeeEntity.lastClaimedAt = event.block.timestamp;
     accumulatedVolumeFeeEntity.totalFeeRebate = accumulatedVolumeFeeEntity.totalFeeRebate.minus(event.params.feeRebate);
     accumulatedVolumeFeeEntity.paidFeesSinceClaimed = BigInt.fromI32(0);

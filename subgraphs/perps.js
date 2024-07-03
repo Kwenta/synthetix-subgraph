@@ -43,10 +43,9 @@ const mainnetConfig = {
       startBlock: 120448500,
     },
   ],
-  // TODO: Update
   brevisFeeReimbursement: {
-    address: '0x2698697bbbD7a28FDF34D301F5D1e668B91F2D57',
-    startBlock: 120448500,
+    address: '0x03b4BD7D900dEFe84098665e3d96dCA73a1f608B',
+    startBlock: 121813580,
   },
 };
 
@@ -64,10 +63,9 @@ const sepoliaConfig = {
       startBlock: 7761214,
     },
   ],
-  // TODO: Update
   brevisFeeReimbursement: {
-    address: '0x2698697bbbD7a28FDF34D301F5D1e668B91F2D57',
-    startBlock: 13804815,
+    address: '0x03b4BD7D900dEFe84098665e3d96dCA73a1f608B',
+    startBlock: 121813580,
   },
 };
 
