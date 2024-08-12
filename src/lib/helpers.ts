@@ -76,20 +76,16 @@ export function getLatestRate(synth: string, txHash: string): BigDecimal | null 
 
 export const SECONDS_IN_30_DAYS = BigInt.fromI32(30 * 24 * 60 * 60);
 
+// TODO: UPDATE ONCE RELEASE DATE DEFINED
 export const VIP_STARTING_BLOCK = BigInt.fromI32(123090212); // Jul-24-2024 12:00:01 AM +UTC
 export const SECONDS_IN_A_DAY = BigInt.fromI32(24 * 60 * 60);
 
 export const VIP_TIER_REBATE = [
   [BigInt.fromI32(0).times(ETHER), BigInt.fromI32(0)],
-  // [BigInt.fromI32(1000000).times(ETHER), BigInt.fromI32(5)],
-  // [BigInt.fromI32(10000000).times(ETHER), BigInt.fromI32(10)],
-  // [BigInt.fromI32(100000000).times(ETHER), BigInt.fromI32(20)],
-  // [BigInt.fromI32(1000000000).times(ETHER), BigInt.fromI32(30)],
-  // TODO: TESTING
-  [BigInt.fromI32(1).times(ETHER), BigInt.fromI32(5)],
-  [BigInt.fromI32(10).times(ETHER), BigInt.fromI32(10)],
-  [BigInt.fromI32(100).times(ETHER), BigInt.fromI32(20)],
-  [BigInt.fromI32(1000).times(ETHER), BigInt.fromI32(30)],
+  [BigInt.fromI32(1000000).times(ETHER), BigInt.fromI32(5)],
+  [BigInt.fromI32(10000000).times(ETHER), BigInt.fromI32(10)],
+  [BigInt.fromI32(100000000).times(ETHER), BigInt.fromI32(20)],
+  [BigInt.fromI32(1000000000).times(ETHER), BigInt.fromI32(30)],
 ];
 
 export function getVipTierMinVolume(tier: i32): BigInt {

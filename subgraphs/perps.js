@@ -43,6 +43,7 @@ const mainnetConfig = {
       startBlock: 120448500,
     },
   ],
+  // TODO: Update VIP addresses once prod is deployed
   vip: {
     feeReimbursementApp: {
       address: '0xaEf0d60e1352F624174367E4834a1ADb34cA1D60',
