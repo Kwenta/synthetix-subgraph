@@ -264,20 +264,6 @@ type LastMarketTrade @entity {
   price: BigInt!
 }
 
-type AccumulatedVolumeFee @entity {
-  id: ID!
-  volume: BigInt!
-  remainingVolume: BigInt!
-  paidFeesSinceClaimed: BigInt!
-  totalFeeRebate: BigInt!
-  timestamp: BigInt!
-  tradesIds: [String!]!
-  lastClaimedAt: BigInt
-  tier: Int!
-  tradesSinceClaimed: Int!
-  allTimeRebates: BigInt!
-}
-
 type OrderFlowFeeImposed @entity {
   id: ID!
   account: Bytes!
@@ -287,13 +273,48 @@ type OrderFlowFeeImposed @entity {
   futuresMarketAddress: String
 }
 
+type AccumulatedVolumeFee @entity {
+  id: ID!
+  volume: BigInt!
+  paidFeesSinceClaimed: BigInt!
+  totalFeeRebate: BigInt!
+  timestamp: BigInt!
+  tradesIds: [String!]!
+  lastClaimedAt: BigInt
+  lastClaimedAtBlockNumber: BigInt
+  lastClaimTriggeredAt: BigInt
+  lastFeeRebateAccumulatedAt: BigInt!
+  lastFeeAccumulatedStartBlockNumber: BigInt
+  tier: Int!
+  tradesSinceClaimed: Int!
+  allTimeRebates: BigInt!
+}
+
 type FeeReimbursed @entity {
   id: ID!
-  accountId: BigInt!
+  account: Bytes!
   timestamp: BigInt!
+  blockNumber: BigInt!
   feeRebate: BigInt!
-  from: BigInt!
-  to: BigInt!
+  txHash: String!
+  rebateTokenPrice: BigInt
+}
+
+type DailyTrade @entity {
+  id: ID!
+  account: String!
+  timestamp: BigInt!
+  tradesIds: [String!]!
+  thirtyDayVolume: BigInt!
+  feesPaid: BigInt!
+  tier: Int
+}
+
+type FeeRebateAccumulated @entity {
+  id: ID!
+  account: String!
+  timestamp: BigInt!
+  txHash: String!
   startBlockNumber: BigInt!
   endBlockNumber: BigInt!
 }

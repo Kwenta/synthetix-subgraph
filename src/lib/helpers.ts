@@ -76,14 +76,20 @@ export function getLatestRate(synth: string, txHash: string): BigDecimal | null 
 
 export const SECONDS_IN_30_DAYS = BigInt.fromI32(30 * 24 * 60 * 60);
 
-export const VIP_STARTING_BLOCK = BigInt.fromI32(120800612); // Jun-01-2024 12:00:01 AM +UTC
+export const VIP_STARTING_BLOCK = BigInt.fromI32(123090212); // Jul-24-2024 12:00:01 AM +UTC
+export const SECONDS_IN_A_DAY = BigInt.fromI32(24 * 60 * 60);
 
 export const VIP_TIER_REBATE = [
   [BigInt.fromI32(0).times(ETHER), BigInt.fromI32(0)],
-  [BigInt.fromI32(1000000).times(ETHER), BigInt.fromI32(5)],
-  [BigInt.fromI32(10000000).times(ETHER), BigInt.fromI32(10)],
-  [BigInt.fromI32(100000000).times(ETHER), BigInt.fromI32(20)],
-  [BigInt.fromI32(1000000000).times(ETHER), BigInt.fromI32(30)],
+  // [BigInt.fromI32(1000000).times(ETHER), BigInt.fromI32(5)],
+  // [BigInt.fromI32(10000000).times(ETHER), BigInt.fromI32(10)],
+  // [BigInt.fromI32(100000000).times(ETHER), BigInt.fromI32(20)],
+  // [BigInt.fromI32(1000000000).times(ETHER), BigInt.fromI32(30)],
+  // TODO: TESTING
+  [BigInt.fromI32(1).times(ETHER), BigInt.fromI32(5)],
+  [BigInt.fromI32(10).times(ETHER), BigInt.fromI32(10)],
+  [BigInt.fromI32(100).times(ETHER), BigInt.fromI32(20)],
+  [BigInt.fromI32(1000).times(ETHER), BigInt.fromI32(30)],
 ];
 
 export function getVipTierMinVolume(tier: i32): BigInt {
@@ -118,4 +124,15 @@ export function getVipTier(accumulatedVolume: BigInt): i32 {
 
 export function getOrderFlowFeeAmount(size: BigInt): BigInt {
   return size.abs().times(ORDER_FLOW_FEE).div(BigInt.fromI32(100000));
+}
+
+export function getStartOfDay(timestamp: BigInt): BigInt {
+  const date = new Date(timestamp.toI64() * 1000);
+
+  date.setUTCHours(0);
+  date.setUTCMinutes(0);
+  date.setUTCSeconds(0);
+  date.setUTCMilliseconds(0);
+
+  return BigInt.fromI64(date.getTime() / 1000);
 }

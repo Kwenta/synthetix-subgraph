@@ -43,9 +43,15 @@ const mainnetConfig = {
       startBlock: 120448500,
     },
   ],
-  brevisFeeReimbursement: {
-    address: '0x03b4BD7D900dEFe84098665e3d96dCA73a1f608B',
-    startBlock: 121813580,
+  vip: {
+    feeReimbursementApp: {
+      address: '0xaEf0d60e1352F624174367E4834a1ADb34cA1D60',
+      startBlock: 123118006,
+    },
+    feeReimbursementClaim: {
+      address: '0x62d221a16a9aCEf93d4f906de51Bd7Ad957DDC4d',
+      startBlock: 123153550,
+    },
   },
 };
 
@@ -63,9 +69,15 @@ const sepoliaConfig = {
       startBlock: 7761214,
     },
   ],
-  brevisFeeReimbursement: {
-    address: '0x03b4BD7D900dEFe84098665e3d96dCA73a1f608B',
-    startBlock: 121813580,
+  vip: {
+    feeReimbursementApp: {
+      address: '0xaEf0d60e1352F624174367E4834a1ADb34cA1D60',
+      startBlock: 123118006,
+    },
+    feeReimbursementClaim: {
+      address: '0x966e8B1627a042c14605746679D9c1708E885ff9',
+      startBlock: 123108552,
+    },
   },
 };
 
@@ -292,14 +304,15 @@ config.events.forEach((events, ind) => {
   });
 });
 
+// VIP Events
 manifest.push({
   kind: 'ethereum/contract',
-  name: 'FeeReimbursement',
+  name: 'FeeReimbursementApp',
   network: currentNetwork,
   source: {
-    address: config.brevisFeeReimbursement.address,
+    address: config.vip.feeReimbursementApp.address,
     abi: 'FeeReimbursementApp',
-    startBlock: config.brevisFeeReimbursement.startBlock,
+    startBlock: config.vip.feeReimbursementApp.startBlock,
   },
   mapping: {
     kind: 'ethereum/events',
@@ -315,8 +328,43 @@ manifest.push({
     ],
     eventHandlers: [
       {
-        event: 'FeeReimbursed(indexed address,uint128,uint248,uint32,uint32,uint64,uint64)',
+        event: 'FeeReimbursed(address,uint248)',
         handler: 'handleFeeReimbursed',
+      },
+      {
+        event: 'FeeRebateAccumulated(address,uint248,uint248,uint248,uint64,uint64)',
+        handler: 'handleFeeRebateAccumulated',
+      },
+    ],
+  },
+});
+
+// VIP Claim trigger
+manifest.push({
+  kind: 'ethereum/contract',
+  name: 'FeeReimbursementClaim',
+  network: currentNetwork,
+  source: {
+    address: config.vip.feeReimbursementClaim.address,
+    abi: 'FeeReimbursementClaim',
+    startBlock: config.vip.feeReimbursementClaim.startBlock,
+  },
+  mapping: {
+    kind: 'ethereum/events',
+    apiVersion: '0.0.6',
+    language: 'wasm/assemblyscript',
+    file: '../src/vip-program.ts',
+    entities: ['FeeReimbursement, AccumulatedVolumeFee'],
+    abis: [
+      {
+        name: 'FeeReimbursementClaim',
+        file: '../abis/FeeReimbursementClaim.json',
+      },
+    ],
+    eventHandlers: [
+      {
+        event: 'FeeRebateClaimed(indexed address,int256)',
+        handler: 'handleFeeRebateClaimed',
       },
     ],
   },

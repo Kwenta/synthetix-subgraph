@@ -199,7 +199,7 @@ program.action(async () => {
           await exec(
             `NETWORK=${settings.network} ./node_modules/.bin/graph deploy ${networkPrefix(settings.network)}${
               settings.subgraph
-            } --deploy-key ${SATSUMA_DEPLOY_KEY} --version-label ${
+            } --ipfs https://ipfs.satsuma.xyz/ --deploy-key ${SATSUMA_DEPLOY_KEY} --version-label ${
               settings.version
             } --node https://subgraphs.alchemy.com/api/subgraphs/deploy ./subgraphs/${settings.subgraph}.js`,
           );

@@ -5,25 +5,73 @@
         "internalType": "address",
         "name": "_brevisProof",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_factory",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_migrationContract",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
   },
   {
+    "inputs": [],
+    "name": "InvalidNewClaimPeriod",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
-        "name": "user",
+        "name": "",
         "type": "address"
-      },
+      }
+    ],
+    "name": "BrevisProofUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
       {
         "indexed": false,
-        "internalType": "uint128",
-        "name": "accountId",
-        "type": "uint128"
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "ClaimerUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "ContractsHashUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
       },
       {
         "indexed": false,
@@ -33,15 +81,15 @@
       },
       {
         "indexed": false,
-        "internalType": "uint32",
-        "name": "startYearMonthDay",
-        "type": "uint32"
+        "internalType": "uint248",
+        "name": "volume30D",
+        "type": "uint248"
       },
       {
         "indexed": false,
-        "internalType": "uint32",
-        "name": "endYearMonthDay",
-        "type": "uint32"
+        "internalType": "uint248",
+        "name": "feeRebateWithRate",
+        "type": "uint248"
       },
       {
         "indexed": false,
@@ -56,7 +104,76 @@
         "type": "uint64"
       }
     ],
+    "name": "FeeRebateAccumulated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "FeeRebateTireModuleUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint248",
+        "name": "feeRebate",
+        "type": "uint248"
+      }
+    ],
     "name": "FeeReimbursed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "MigrationDone",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint248",
+        "name": "feeAccumulated",
+        "type": "uint248"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "startBlockNumber",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "endBlockNumber",
+        "type": "uint64"
+      }
+    ],
+    "name": "MigrationFinishedForAccount",
     "type": "event"
   },
   {
@@ -100,12 +217,31 @@
   {
     "inputs": [
       {
-        "internalType": "uint128",
+        "internalType": "address",
         "name": "",
-        "type": "uint128"
+        "type": "address"
       }
     ],
-    "name": "accountIdClaimedPeriod",
+    "name": "accountAccumulatedFee",
+    "outputs": [
+      {
+        "internalType": "uint248",
+        "name": "",
+        "type": "uint248"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "accountClaimPeriod",
     "outputs": [
       {
         "internalType": "uint64",
@@ -122,16 +258,53 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "accountModule",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "contract IAccountModule",
-        "name": "",
-        "type": "address"
+        "internalType": "uint64",
+        "name": "_chainId",
+        "type": "uint64"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "commitHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "vkHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "appCommitHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "appVkHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "smtRoot",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct Brevis.ProofData[]",
+        "name": "_proofDataArray",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_appCircuitOutputs",
+        "type": "bytes[]"
       }
     ],
-    "stateMutability": "view",
+    "name": "brevisBatchCallback",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -158,6 +331,97 @@
     "outputs": [
       {
         "internalType": "contract IBrevisProof",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "claim",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "claimer",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "contractsHash",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "factory",
+    "outputs": [
+      {
+        "internalType": "contract IFactory",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "feeRebateTierModule",
+    "outputs": [
+      {
+        "internalType": "contract IFeeRebateTierModule",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "_accounts",
+        "type": "address[]"
+      }
+    ],
+    "name": "migrate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "migrationContract",
+    "outputs": [
+      {
+        "internalType": "contract IMigration",
         "name": "",
         "type": "address"
       }
@@ -214,12 +478,58 @@
   {
     "inputs": [
       {
-        "internalType": "contract IAccountModule",
-        "name": "_accountModule",
+        "internalType": "address",
+        "name": "_brevisProof",
         "type": "address"
       }
     ],
-    "name": "setAccountModule",
+    "name": "setBrevisProof",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_claimer",
+        "type": "address"
+      }
+    ],
+    "name": "setClaimer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_contractsHash",
+        "type": "uint256"
+      }
+    ],
+    "name": "setContractsHash",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IFeeRebateTierModule",
+        "name": "_feeRebateTierModule",
+        "type": "address"
+      }
+    ],
+    "name": "setFeeRebateTierModule",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "setMigrationFinished",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -256,6 +566,71 @@
       }
     ],
     "name": "setVkHashes",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint64",
+        "name": "_chainId",
+        "type": "uint64"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "commitHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "vkHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "appCommitHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "appVkHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "smtRoot",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct Brevis.ProofData",
+        "name": "_proofData",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_merkleRoot",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "_merkleProof",
+        "type": "bytes32[]"
+      },
+      {
+        "internalType": "uint8",
+        "name": "_nodeIndex",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_appCircuitOutput",
+        "type": "bytes"
+      }
+    ],
+    "name": "singleRun",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
