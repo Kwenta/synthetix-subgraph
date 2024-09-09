@@ -36,7 +36,7 @@ program
 
 program.action(async () => {
   const MAIN_SUBGRAPH_EXCLUDE = [];
-  const NETWORK_CHOICES = ['mainnet', 'goerli', 'optimism', 'optimism-sepolia', 'base', 'base-sepolia'];
+  const NETWORK_CHOICES = ['optimism', 'optimism-sepolia', 'base', 'base-sepolia', 'arb', 'arbitrum-sepolia'];
   const SUBGRAPH_CHOICES = await fs.readdirSync(path.join(__dirname, '../subgraphs')).reduce((acc, val) => {
     if (val.endsWith('.js') && val !== 'main.js') {
       acc.push(val.slice(0, -3));
