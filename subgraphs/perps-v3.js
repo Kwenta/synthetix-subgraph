@@ -5,21 +5,36 @@ const manifest = [];
 // get config
 const currentNetwork = getCurrentNetwork();
 
-const mainnetConfig = {
-  marketProxy: {
-    address: '0x0A2AF931eFFd34b81ebcc57E3d3c9B1E1dE1C9Ce',
-    startBlock: 4382,
+const configs = {
+  ['base-sepolia']: {
+    marketProxy: {
+      address: '0xf53Ca60F031FAf0E347D44FbaA4870da68250c8d',
+      startBlock: 8157661,
+    },
+  },
+  ['arbitrum-sepolia']: {
+    marketProxy: {
+      address: '0xA73A7B754Ec870b3738D0654cA75b7d0eEbdb460',
+      startBlock: 68535378,
+    },
+  },
+  base: {
+    marketProxy: {
+      address: '0x0A2AF931eFFd34b81ebcc57E3d3c9B1E1dE1C9Ce',
+      startBlock: 4382,
+    },
+  },
+  ['arbitrum-one']: {
+    marketProxy: {
+      address: '0xd762960c31210Cf1bDf75b06A5192d395EEDC659',
+      startBlock: 218273200,
+    },
   },
 };
 
-const sepoliaConfig = {
-  marketProxy: {
-    address: '0xf53Ca60F031FAf0E347D44FbaA4870da68250c8d',
-    startBlock: 8157661,
-  },
-};
+const config = configs[currentNetwork];
 
-const config = currentNetwork === 'base' ? mainnetConfig : sepoliaConfig;
+if (!config) throw new Error(`Config not found for network ${currentNetwork}`);
 
 manifest.push({
   kind: 'ethereum/contract',
