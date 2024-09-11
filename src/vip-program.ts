@@ -11,7 +11,7 @@ import {
   FeeRebateAccumulated as FeeRebateAccumulatedEvent,
 } from '../generated/subgraphs/perps/FeeReimbursementApp/FeeReimbursementApp';
 import { FeeRebateClaimed as FeeRebateClaimedEvent } from '../generated/subgraphs/perps/FeeReimbursementClaim/FeeReimbursementClaim';
-import { ETHER, ZERO, computeVipFeeRebate, getStartOfDay, getVipTier } from './lib/helpers';
+import { ZERO, computeVipFeeRebate, getStartOfDay, getVipTier } from './lib/helpers';
 
 export function handleFeeReimbursed(event: FeeReimbursedEvent): void {
   let smartMarginAccount = SmartMarginAccount.load(event.params.account.toHex());
@@ -104,12 +104,10 @@ export function handleFeeRebateAccumulated(event: FeeRebateAccumulatedEvent): vo
       continue;
     }
 
-    const newTradeVolume = tradeEntity.size.abs().times(tradeEntity.price).div(ETHER).abs();
     const tier = getVipTier(dailyTradeEntity.thirtyDayVolume);
     const feeRebate = computeVipFeeRebate(tradeEntity.feesPaid, tier);
     tradeEntity.vipTier = tier;
     tradeEntity.feeRebate = feeRebate;
-    accumulatedVolumeFeeEntity.volume = accumulatedVolumeFeeEntity.volume.plus(newTradeVolume);
     accumulatedVolumeFeeEntity.paidFeesSinceClaimed = accumulatedVolumeFeeEntity.paidFeesSinceClaimed.plus(
       tradeEntity.feesPaid,
     );
