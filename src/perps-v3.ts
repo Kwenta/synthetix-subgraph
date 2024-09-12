@@ -17,6 +17,7 @@ import {
   PnlSnapshot,
   MarketPriceUpdate,
   PositionLiquidation,
+  OpenPositions,
 } from '../generated/subgraphs/perps-v3/schema';
 import {
   AccountCreated,
@@ -28,6 +29,7 @@ import {
   CollateralModified as CollateralModifiedEvent,
   OrderCommitted as OrderCommittedEvent,
   InterestCharged as InterestChargedEvent,
+  AccountFlaggedForLiquidation as AccountFlaggedForLiquidationEvent,
 } from '../generated/subgraphs/perps-v3/PerpsV3/PerpsV3MarketProxy';
 import { BigInt, log, store } from '@graphprotocol/graph-ts';
 import {
@@ -126,6 +128,7 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
       }
     }
   }
+  updatePnlOnLiquidation(event.params.accountId);
 }
 
 export function handleOrderSettled(event: OrderSettledEvent): void {
@@ -246,6 +249,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     positionEntity.save();
     order.position = positionEntity.id;
     statEntity.save();
+    addToOpenPositions(positionEntity);
   } else {
     const tradeNotionalValue = event.params.sizeDelta.abs().times(event.params.fillPrice);
 
@@ -261,6 +265,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
       openPositionEntity.save();
 
       calculatePnl(positionEntity, order, event, statEntity);
+      removeFromOpenPositions(positionEntity);
     } else {
       if (
         (positionEntity.size.lt(ZERO) && event.params.newSize.gt(ZERO)) ||
@@ -513,6 +518,74 @@ export function handleInterestCharged(event: InterestChargedEvent): void {
     ]);
     interestCharged.save();
   }
+}
+
+export function handleAccountFlaggedForLiquidation(event: AccountFlaggedForLiquidationEvent): void {
+  let openPositionsEntity = OpenPositions.load(event.params.accountId.toHex());
+
+  if (openPositionsEntity && openPositionsEntity.openPositionIds.length > 0) {
+    openPositionsEntity.marginPerPosition = event.params.availableMargin.div(
+      BigInt.fromI32(openPositionsEntity.openPositionIds.length),
+    );
+    openPositionsEntity.save();
+  }
+}
+
+function updatePnlOnLiquidation(accountId: BigInt): void {
+  const openPositionsEntity = OpenPositions.load(accountId.toHex());
+  if (openPositionsEntity && openPositionsEntity.marginPerPosition.gt(ZERO)) {
+    const positionIds = openPositionsEntity.openPositionIds;
+    for (let index = 0; index < positionIds.length; index++) {
+      const positionId = positionIds[index];
+      const positionEntity = PerpsV3Position.load(positionId);
+      if (positionEntity) {
+        positionEntity.realizedPnl = positionEntity.realizedPnl.minus(openPositionsEntity.marginPerPosition);
+        positionEntity.save();
+      }
+    }
+    openPositionsEntity.openPositionIds = [];
+    openPositionsEntity.marginPerPosition = ZERO;
+  }
+}
+
+function addToOpenPositions(position: PerpsV3Position): void {
+  const accountId = position.accountId.toHex();
+
+  let openPositionsEntity = OpenPositions.load(accountId);
+  if (!openPositionsEntity) {
+    openPositionsEntity = new OpenPositions(accountId);
+    openPositionsEntity.marginPerPosition = ZERO;
+  }
+
+  const newOpenPositionIds = openPositionsEntity.openPositionIds;
+  newOpenPositionIds.push(position.id);
+  openPositionsEntity.openPositionIds = newOpenPositionIds;
+
+  openPositionsEntity.save();
+}
+
+function removeFromOpenPositions(position: PerpsV3Position): void {
+  const accountId = position.accountId.toHex();
+
+  let openPositionsEntity = OpenPositions.load(accountId);
+  if (!openPositionsEntity) {
+    openPositionsEntity = new OpenPositions(accountId);
+    openPositionsEntity.marginPerPosition = ZERO;
+  }
+
+  const positionIds = openPositionsEntity.openPositionIds;
+  const newOpenPositionIds: string[] = [];
+
+  for (let index = 0; index < positionIds.length; index++) {
+    const positionId = positionIds[index];
+    if (positionId != position.id) {
+      newOpenPositionIds.push(positionId);
+    }
+  }
+
+  openPositionsEntity.openPositionIds = newOpenPositionIds;
+
+  openPositionsEntity.save();
 }
 
 function calculatePnl(

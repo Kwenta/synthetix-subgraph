@@ -95,6 +95,10 @@ manifest.push({
         event: 'InterestCharged(indexed uint128,uint256)',
         handler: 'handleInterestCharged',
       },
+      {
+        event: 'AccountFlaggedForLiquidation(indexed uint128,int256,uint256,uint256,uint256)',
+        handler: 'handleAccountFlaggedForLiquidation',
+      },
     ],
   },
 });
