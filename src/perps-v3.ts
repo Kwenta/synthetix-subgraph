@@ -234,13 +234,15 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     positionEntity.totalReducedNotional = ZERO;
     positionEntity.interestCharged = ZERO;
 
-    updateAggregateStatEntities(
-      positionEntity.marketId,
-      positionEntity.marketSymbol,
-      event.block.timestamp,
-      ONE,
-      volume,
-    );
+    if (event.params.trackingCode.toString() == 'KWENTA') {
+      updateAggregateStatEntities(
+        positionEntity.marketId,
+        positionEntity.marketSymbol,
+        event.block.timestamp,
+        ONE,
+        volume,
+      );
+    }
 
     statEntity.feesPaid = statEntity.feesPaid.plus(event.params.totalFees);
     statEntity.totalTrades = statEntity.totalTrades.plus(BigInt.fromI32(1));
@@ -306,13 +308,15 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     order.position = positionEntity.id;
     positionEntity.size = positionEntity.size.plus(event.params.sizeDelta);
 
-    updateAggregateStatEntities(
-      positionEntity.marketId,
-      positionEntity.marketSymbol,
-      event.block.timestamp,
-      ONE,
-      volume,
-    );
+    if (event.params.trackingCode.toString() == 'KWENTA') {
+      updateAggregateStatEntities(
+        positionEntity.marketId,
+        positionEntity.marketSymbol,
+        event.block.timestamp,
+        ONE,
+        volume,
+      );
+    }
 
     statEntity.feesPaid = statEntity.feesPaid.plus(event.params.totalFees).minus(event.params.accruedFunding);
 
