@@ -274,6 +274,19 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
         // If ths positions size is increasing then recalculate the average entry price
         const existingNotionalValue = positionEntity.size.abs().times(positionEntity.avgEntryPrice);
         positionEntity.avgEntryPrice = existingNotionalValue.plus(tradeNotionalValue).div(event.params.newSize.abs());
+
+        let interestCharged = order.interestCharged !== null ? order.interestCharged! : ZERO;
+
+        positionEntity.interestCharged = positionEntity.interestCharged.plus(interestCharged);
+        positionEntity.pnlWithFeesPaid = positionEntity.realizedPnl
+          .minus(positionEntity.feesPaid)
+          .plus(positionEntity.netFunding)
+          .plus(interestCharged);
+
+        statEntity.pnlWithFeesPaid = statEntity.pnlWithFeesPaid
+          .minus(order.totalFees)
+          .plus(order.accruedFunding)
+          .plus(interestCharged);
       } else {
         // If decreasing calc the pnl
         calculatePnl(positionEntity, order, event, statEntity);
