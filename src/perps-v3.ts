@@ -17,7 +17,7 @@ import {
   PnlSnapshot,
   MarketPriceUpdate,
   PositionLiquidation,
-  OpenPositions,
+  PositionsOpen,
 } from '../generated/subgraphs/perps-v3/schema';
 import {
   AccountCreated,
@@ -104,6 +104,8 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
   liquidation.notionalAmount = estiamtedNotionalSize;
   liquidation.estimatedPrice = market.lastPrice;
   liquidation.timestamp = event.block.timestamp;
+  liquidation.txHash = event.transaction.hash.toHex();
+  liquidation.liquidationPnl = ZERO;
   liquidation.save();
 
   let statId = event.params.accountId.toString() + '-' + account.owner.toHexString();
@@ -126,9 +128,12 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
         statEntity.liquidations = statEntity.liquidations.plus(BigInt.fromI32(1));
         statEntity.save();
       }
+
+      const updatedPnl = calculatePnlOnLiquidation(positionEntity, event, statEntity);
+      liquidation.liquidationPnl = updatedPnl;
+      liquidation.save();
     }
   }
-  updatePnlOnLiquidation(event.params.accountId);
 }
 
 export function handleOrderSettled(event: OrderSettledEvent): void {
@@ -251,7 +256,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     positionEntity.save();
     order.position = positionEntity.id;
     statEntity.save();
-    addToOpenPositions(positionEntity);
+    addToPositionsOpen(positionEntity);
   } else {
     const tradeNotionalValue = event.params.sizeDelta.abs().times(event.params.fillPrice);
 
@@ -267,7 +272,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
       openPositionEntity.save();
 
       calculatePnl(positionEntity, order, event, statEntity);
-      removeFromOpenPositions(positionEntity);
+      removeFromPositionsOpen(positionEntity);
     } else {
       if (
         (positionEntity.size.lt(ZERO) && event.params.newSize.gt(ZERO)) ||
@@ -525,71 +530,42 @@ export function handleInterestCharged(event: InterestChargedEvent): void {
 }
 
 export function handleAccountFlaggedForLiquidation(event: AccountFlaggedForLiquidationEvent): void {
-  let openPositionsEntity = OpenPositions.load(event.params.accountId.toHex());
+  let positionsOpenEntity = PositionsOpen.load(event.params.accountId.toString());
 
-  if (openPositionsEntity && openPositionsEntity.openPositionIds.length > 0) {
-    openPositionsEntity.marginPerPosition = event.params.availableMargin.div(
-      BigInt.fromI32(openPositionsEntity.openPositionIds.length),
+  if (positionsOpenEntity && positionsOpenEntity.openPositions > 0) {
+    positionsOpenEntity.marginPerPosition = event.params.availableMargin.div(
+      BigInt.fromI32(positionsOpenEntity.openPositions),
     );
-    openPositionsEntity.save();
+
+    positionsOpenEntity.txHash = event.transaction.hash.toHex();
+    positionsOpenEntity.save();
   }
 }
 
-function updatePnlOnLiquidation(accountId: BigInt): void {
-  const openPositionsEntity = OpenPositions.load(accountId.toHex());
-  if (openPositionsEntity && openPositionsEntity.marginPerPosition.gt(ZERO)) {
-    const positionIds = openPositionsEntity.openPositionIds;
-    for (let index = 0; index < positionIds.length; index++) {
-      const positionId = positionIds[index];
-      const positionEntity = PerpsV3Position.load(positionId);
-      if (positionEntity) {
-        positionEntity.realizedPnl = positionEntity.realizedPnl.minus(openPositionsEntity.marginPerPosition);
-        positionEntity.save();
-      }
-    }
-    openPositionsEntity.openPositionIds = [];
-    openPositionsEntity.marginPerPosition = ZERO;
+function addToPositionsOpen(position: PerpsV3Position): void {
+  let positionsOpenEntity = PositionsOpen.load(position.accountId.toString());
+  if (!positionsOpenEntity) {
+    positionsOpenEntity = new PositionsOpen(position.accountId.toString());
+    positionsOpenEntity.marginPerPosition = ZERO;
+    positionsOpenEntity.openPositions = 0;
   }
+
+  positionsOpenEntity.openPositions = positionsOpenEntity.openPositions + 1;
+  positionsOpenEntity.save();
 }
 
-function addToOpenPositions(position: PerpsV3Position): void {
-  const accountId = position.accountId.toHex();
-
-  let openPositionsEntity = OpenPositions.load(accountId);
-  if (!openPositionsEntity) {
-    openPositionsEntity = new OpenPositions(accountId);
-    openPositionsEntity.marginPerPosition = ZERO;
+function removeFromPositionsOpen(position: PerpsV3Position): void {
+  let positionsOpenEntity = PositionsOpen.load(position.accountId.toString());
+  if (!positionsOpenEntity) {
+    positionsOpenEntity = new PositionsOpen(position.accountId.toString());
+    positionsOpenEntity.marginPerPosition = ZERO;
+    positionsOpenEntity.openPositions = 0;
   }
 
-  const newOpenPositionIds = openPositionsEntity.openPositionIds;
-  newOpenPositionIds.push(position.id);
-  openPositionsEntity.openPositionIds = newOpenPositionIds;
-
-  openPositionsEntity.save();
-}
-
-function removeFromOpenPositions(position: PerpsV3Position): void {
-  const accountId = position.accountId.toHex();
-
-  let openPositionsEntity = OpenPositions.load(accountId);
-  if (!openPositionsEntity) {
-    openPositionsEntity = new OpenPositions(accountId);
-    openPositionsEntity.marginPerPosition = ZERO;
+  if (positionsOpenEntity.openPositions > 0) {
+    positionsOpenEntity.openPositions = positionsOpenEntity.openPositions - 1;
+    positionsOpenEntity.save();
   }
-
-  const positionIds = openPositionsEntity.openPositionIds;
-  const newOpenPositionIds: string[] = [];
-
-  for (let index = 0; index < positionIds.length; index++) {
-    const positionId = positionIds[index];
-    if (positionId != position.id) {
-      newOpenPositionIds.push(positionId);
-    }
-  }
-
-  openPositionsEntity.openPositionIds = newOpenPositionIds;
-
-  openPositionsEntity.save();
 }
 
 function calculatePnl(
@@ -630,6 +606,50 @@ function calculatePnl(
   order.save();
   position.save();
   statEntity.save();
+}
+
+function calculatePnlOnLiquidation(
+  position: PerpsV3Position,
+  event: PositionLiquidatedEvent,
+  statEntity: PerpsV3Stat | null,
+): BigInt {
+  let market = PerpsV3Market.load(event.params.marketId.toString());
+  const positionsOpenEntity = PositionsOpen.load(position.accountId.toString());
+
+  if (!market || !positionsOpenEntity) {
+    return ZERO;
+  }
+
+  let pnl = market.lastPrice
+    .minus(position.avgEntryPrice)
+    .times(event.params.amountLiquidated)
+    .abs()
+    .times(BigInt.fromI32(-1))
+    .div(ETHER)
+    .minus(positionsOpenEntity.marginPerPosition);
+
+  position.realizedPnl = position.realizedPnl.plus(pnl);
+  position.pnlWithFeesPaid = position.realizedPnl.minus(position.feesPaid).plus(position.netFunding);
+
+  if (statEntity) {
+    statEntity.pnl = statEntity.pnl.plus(pnl);
+    statEntity.pnlWithFeesPaid = statEntity.pnlWithFeesPaid.plus(pnl);
+    let pnlSnapshot = new PnlSnapshot(
+      position.id + '-' + event.block.timestamp.toString() + '-' + event.transaction.hash.toHex(),
+    );
+    pnlSnapshot.pnl = statEntity.pnl;
+    pnlSnapshot.accountId = position.accountId;
+    pnlSnapshot.timestamp = event.block.timestamp;
+    pnlSnapshot.save();
+    statEntity.save();
+  }
+
+  positionsOpenEntity.openPositions = 0;
+
+  positionsOpenEntity.save();
+  position.save();
+
+  return pnl;
 }
 
 function getOrCreateMarketAggregateStats(

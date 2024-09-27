@@ -210,6 +210,8 @@ type PositionLiquidation @entity {
   notionalAmount: BigInt!
   estimatedPrice: BigInt!
   position: PerpsV3Position @derivedFrom(field: "liquidation")
+  liquidationPnl: BigInt!
+  txHash: String!
 }
 
 type InterestCharged @entity {
@@ -221,8 +223,9 @@ type InterestCharged @entity {
   txHash: String!
 }
 
-type OpenPositions @entity {
+type PositionsOpen @entity {
   id: ID!
-  openPositionIds: [String!]!
+  openPositions: Int!
   marginPerPosition: BigInt!
+  txHash: String
 }
