@@ -18,6 +18,8 @@ export let YEAR_SECONDS = BigInt.fromI32(31556736);
 
 export let BPS_CONVERSION = BigInt.fromI32(10000);
 
+export let ORDER_FLOW_FEE = BigInt.fromI32(5);
+
 export let CANDLE_PERIODS: BigInt[] = [
   DAY_SECONDS.times(BigInt.fromI32(30)),
   DAY_SECONDS.times(BigInt.fromI32(7)),
@@ -70,4 +72,63 @@ export function getLatestRate(synth: string, txHash: string): BigDecimal | null 
     return initFeed(synth);
   }
   return latestRate.rate;
+}
+
+export const SECONDS_IN_30_DAYS = BigInt.fromI32(30 * 24 * 60 * 60);
+
+// TODO: UPDATE ONCE RELEASE DATE DEFINED
+export const VIP_STARTING_BLOCK = BigInt.fromI32(124893812); // Sep-03-2024 18:00:00 AM +UTC
+export const SECONDS_IN_A_DAY = BigInt.fromI32(24 * 60 * 60);
+
+export const VIP_TIER_REBATE = [
+  [BigInt.fromI32(0).times(ETHER), BigInt.fromI32(0)],
+  [BigInt.fromI32(1000000).times(ETHER), BigInt.fromI32(10)],
+  [BigInt.fromI32(10000000).times(ETHER), BigInt.fromI32(40)],
+  [BigInt.fromI32(100000000).times(ETHER), BigInt.fromI32(70)],
+  [BigInt.fromI32(1000000000).times(ETHER), BigInt.fromI32(110)],
+];
+
+export function getVipTierMinVolume(tier: i32): BigInt {
+  if (tier > 4 || tier < 1) {
+    return ZERO;
+  }
+
+  return VIP_TIER_REBATE[tier][0];
+}
+
+export function computeVipFeeRebate(fees: BigInt, tier: i32): BigInt {
+  if (tier > 4 || tier < 1) {
+    return ZERO;
+  }
+
+  return fees.times(VIP_TIER_REBATE[tier][1]).div(BigInt.fromI32(100));
+}
+
+export function getVipTier(accumulatedVolume: BigInt): i32 {
+  if (accumulatedVolume > getVipTierMinVolume(4)) {
+    return 4;
+  } else if (accumulatedVolume > getVipTierMinVolume(3)) {
+    return 3;
+  } else if (accumulatedVolume > getVipTierMinVolume(2)) {
+    return 2;
+  } else if (accumulatedVolume > getVipTierMinVolume(1)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+export function getOrderFlowFeeAmount(size: BigInt): BigInt {
+  return size.abs().times(ORDER_FLOW_FEE).div(BigInt.fromI32(100000));
+}
+
+export function getStartOfDay(timestamp: BigInt): BigInt {
+  const date = new Date(timestamp.toI64() * 1000);
+
+  date.setUTCHours(0);
+  date.setUTCMinutes(0);
+  date.setUTCSeconds(0);
+  date.setUTCMilliseconds(0);
+
+  return BigInt.fromI64(date.getTime() / 1000);
 }

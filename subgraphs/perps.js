@@ -43,6 +43,16 @@ const mainnetConfig = {
       startBlock: 120448500,
     },
   ],
+  vip: {
+    feeReimbursementApp: {
+      address: '0xa7CC9DfDbe44069677c5EcFFF732930B17b1364E',
+      startBlock: 124652083,
+    },
+    feeReimbursementClaim: {
+      address: '0x4B1074ce02DD5Da88b86d0a2Dab2C673Ef879376',
+      startBlock: 124714907,
+    },
+  },
 };
 
 const sepoliaConfig = {
@@ -59,6 +69,16 @@ const sepoliaConfig = {
       startBlock: 7761214,
     },
   ],
+  vip: {
+    feeReimbursementApp: {
+      address: '0xaEf0d60e1352F624174367E4834a1ADb34cA1D60',
+      startBlock: 123118006,
+    },
+    feeReimbursementClaim: {
+      address: '0x966e8B1627a042c14605746679D9c1708E885ff9',
+      startBlock: 123108552,
+    },
+  },
 };
 
 const config = currentNetwork === 'optimism' ? mainnetConfig : sepoliaConfig;
@@ -282,6 +302,72 @@ config.events.forEach((events, ind) => {
       ],
     },
   });
+});
+
+// VIP Events
+manifest.push({
+  kind: 'ethereum/contract',
+  name: 'FeeReimbursementApp',
+  network: currentNetwork,
+  source: {
+    address: config.vip.feeReimbursementApp.address,
+    abi: 'FeeReimbursementApp',
+    startBlock: config.vip.feeReimbursementApp.startBlock,
+  },
+  mapping: {
+    kind: 'ethereum/events',
+    apiVersion: '0.0.6',
+    language: 'wasm/assemblyscript',
+    file: '../src/vip-program.ts',
+    entities: ['FeeReimbursement, AccumulatedVolumeFee'],
+    abis: [
+      {
+        name: 'FeeReimbursementApp',
+        file: '../abis/FeeReimbursementApp.json',
+      },
+    ],
+    eventHandlers: [
+      {
+        event: 'FeeReimbursed(address,uint248)',
+        handler: 'handleFeeReimbursed',
+      },
+      {
+        event: 'FeeRebateAccumulated(address,uint248,uint248,uint248,uint64,uint64)',
+        handler: 'handleFeeRebateAccumulated',
+      },
+    ],
+  },
+});
+
+// VIP Claim trigger
+manifest.push({
+  kind: 'ethereum/contract',
+  name: 'FeeReimbursementClaim',
+  network: currentNetwork,
+  source: {
+    address: config.vip.feeReimbursementClaim.address,
+    abi: 'FeeReimbursementClaim',
+    startBlock: config.vip.feeReimbursementClaim.startBlock,
+  },
+  mapping: {
+    kind: 'ethereum/events',
+    apiVersion: '0.0.6',
+    language: 'wasm/assemblyscript',
+    file: '../src/vip-program.ts',
+    entities: ['FeeReimbursement, AccumulatedVolumeFee'],
+    abis: [
+      {
+        name: 'FeeReimbursementClaim',
+        file: '../abis/FeeReimbursementClaim.json',
+      },
+    ],
+    eventHandlers: [
+      {
+        event: 'FeeRebateClaimed(indexed address,int256)',
+        handler: 'handleFeeRebateClaimed',
+      },
+    ],
+  },
 });
 
 module.exports = {

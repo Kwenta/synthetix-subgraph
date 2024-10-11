@@ -15,7 +15,9 @@ import {
   SmartMarginOrder,
   FundingRatePeriod,
   LastMarketTrade,
+  AccumulatedVolumeFee,
   OrderFlowFeeImposed,
+  DailyTrade,
 } from '../generated/subgraphs/perps/schema';
 import {
   MarketAdded as MarketAddedEvent,
@@ -36,12 +38,18 @@ import {
 } from '../generated/subgraphs/perps/templates/PerpsMarket/PerpsV2MarketProxyable';
 import { PerpsMarket } from '../generated/subgraphs/perps/templates';
 import {
+  computeVipFeeRebate,
   DAY_SECONDS,
   ETHER,
   FUNDING_RATE_PERIOD_TYPES,
   FUNDING_RATE_PERIODS,
+  getStartOfDay,
+  getVipTier,
+  getVipTierMinVolume,
   ONE,
   ONE_HOUR_SECONDS,
+  SECONDS_IN_30_DAYS,
+  VIP_STARTING_BLOCK,
   ZERO,
   ZERO_ADDRESS,
 } from './lib/helpers';
@@ -195,18 +203,8 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
 
   // check that tradeSize is not zero to filter out margin transfers
   if (event.params.tradeSize.isZero() == false) {
-    let orderFlowFee = ZERO;
-    if (smartMarginAccount) {
-      const orderFlowFeeEntity = OrderFlowFeeImposed.load(smartMarginAccount.id.toString());
-      if (orderFlowFeeEntity) {
-        // Imposed OrderFlowFee
-        orderFlowFee = orderFlowFeeEntity.amount;
-        store.remove('OrderFlowFeeImposed', orderFlowFeeEntity.id.toString());
-      }
-    }
-
-    feesPaid = feesPaid.plus(orderFlowFee);
     let tradeEntity = new FuturesTrade(event.transaction.hash.toHex() + '-' + event.logIndex.toString());
+
     tradeEntity.timestamp = event.block.timestamp;
     tradeEntity.account = account;
     tradeEntity.abstractAccount = sendingAccount;
@@ -224,6 +222,10 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     tradeEntity.keeperFeesPaid = ZERO;
     tradeEntity.orderType = 'Market';
     tradeEntity.trackingCode = ZERO_ADDRESS;
+    tradeEntity.blockNumber = event.block.number;
+    tradeEntity.executionTxhash = event.transaction.hash.toHex();
+    tradeEntity.feeRebate = ZERO;
+    tradeEntity.vipTier = 0;
 
     if (marketEntity) {
       tradeEntity.asset = marketEntity.asset;
@@ -402,6 +404,10 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       tradeEntity.keeperFeesPaid = ZERO;
       tradeEntity.orderType = 'Liquidation';
       tradeEntity.trackingCode = ZERO_ADDRESS;
+      tradeEntity.blockNumber = event.block.number;
+      tradeEntity.vipTier = 0;
+      tradeEntity.feeRebate = ZERO;
+      tradeEntity.executionTxhash = event.transaction.hash.toHex();
       tradeEntity.save();
 
       // set position values
@@ -825,6 +831,19 @@ export function handleDelayedOrderSubmitted(event: DelayedOrderSubmittedEvent): 
   let smartMarginAccount = SmartMarginAccount.load(sendingAccount.toHex());
   const account = smartMarginAccount ? smartMarginAccount.owner : sendingAccount;
 
+  const orderFlowFeeEntity = OrderFlowFeeImposed.load(account.toHexString() + '-' + event.transaction.hash.toHex());
+  if (orderFlowFeeEntity) {
+    const newOrderFlowFeeEntity = new OrderFlowFeeImposed(
+      account.toHexString() + '-' + futuresMarketAddress.toHexString(),
+    );
+    newOrderFlowFeeEntity.amount = orderFlowFeeEntity.amount;
+    newOrderFlowFeeEntity.txHash = event.transaction.hash.toHexString();
+    newOrderFlowFeeEntity.timestamp = event.block.timestamp;
+    newOrderFlowFeeEntity.account = account;
+    newOrderFlowFeeEntity.save();
+    store.remove('OrderFlowFeeImposed', account.toHexString() + '-' + event.transaction.hash.toHex());
+  }
+
   let marketEntity = FuturesMarketEntity.load(futuresMarketAddress.toHex());
   if (marketEntity) {
     let marketAsset = marketEntity.asset;
@@ -902,6 +921,28 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
           smartMarginOrderEntity.save();
         }
 
+        let orderFlowFee = ZERO;
+
+        const orderFlowFeeId = account.toHexString() + '-' + futuresMarketAddress.toHexString();
+        const orderFlowFeeEntity = OrderFlowFeeImposed.load(orderFlowFeeId);
+        if (orderFlowFeeEntity) {
+          // Imposed OrderFlowFee
+          orderFlowFee = orderFlowFeeEntity.amount;
+          tradeEntity.orderFeeFlowTxhash = orderFlowFeeEntity.txHash;
+          store.remove('OrderFlowFeeImposed', orderFlowFeeId);
+        }
+        tradeEntity.feesPaid = tradeEntity.feesPaid.plus(orderFlowFee);
+        statEntity.feesPaid = statEntity.feesPaid.plus(orderFlowFee);
+        statEntity.save();
+
+        if (positionEntity) {
+          positionEntity.feesPaid = positionEntity.feesPaid.plus(orderFlowFee);
+          positionEntity.pnlWithFeesPaid = positionEntity.pnl
+            .minus(positionEntity.feesPaid)
+            .plus(positionEntity.netFunding);
+          positionEntity.save();
+        }
+
         // add fee if not self-executed
         if (futuresOrderEntity.keeper != futuresOrderEntity.account) {
           tradeEntity.feesPaid = tradeEntity.feesPaid.plus(event.params.keeperDeposit);
@@ -932,6 +973,7 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
           statEntity.save();
         }
 
+        updateAccumulatedVolumeFee(event);
         tradeEntity.save();
       } else {
         // if no trade exists, the order was cancelled
@@ -941,4 +983,78 @@ export function handleDelayedOrderRemoved(event: DelayedOrderRemovedEvent): void
       futuresOrderEntity.save();
     }
   }
+}
+
+function updateAccumulatedVolumeFee(event: DelayedOrderRemovedEvent): void {
+  let smartMarginAccount = SmartMarginAccount.load(event.params.account.toHex());
+  if (!smartMarginAccount) {
+    return;
+  }
+
+  const tradeEntity = FuturesTrade.load(
+    event.transaction.hash.toHex() + '-' + event.logIndex.minus(BigInt.fromI32(1)).toString(),
+  );
+
+  if (event.block.number < VIP_STARTING_BLOCK || !tradeEntity) {
+    return;
+  }
+
+  const newTradeVolume = tradeEntity.size.abs().times(tradeEntity.price).div(ETHER).abs();
+  const newTradeId = tradeEntity.id;
+  let newTradeIds: string[];
+
+  let accumulatedVolumeFeeEntity = AccumulatedVolumeFee.load(smartMarginAccount.id);
+  if (accumulatedVolumeFeeEntity == null) {
+    accumulatedVolumeFeeEntity = new AccumulatedVolumeFee(smartMarginAccount.id);
+    accumulatedVolumeFeeEntity.tier = 0;
+    accumulatedVolumeFeeEntity.volume = BigInt.fromI32(0);
+    accumulatedVolumeFeeEntity.paidFeesSinceClaimed = BigInt.fromI32(0);
+    accumulatedVolumeFeeEntity.totalFeeRebate = BigInt.fromI32(0);
+    accumulatedVolumeFeeEntity.tradesSinceClaimed = 0;
+    accumulatedVolumeFeeEntity.timestamp = event.block.timestamp;
+    accumulatedVolumeFeeEntity.tradesIds = [];
+    accumulatedVolumeFeeEntity.allTimeRebates = ZERO;
+    accumulatedVolumeFeeEntity.lastFeeRebateAccumulatedAt = ZERO;
+  }
+
+  let thirtyDaysAgo = event.block.timestamp.minus(SECONDS_IN_30_DAYS);
+  newTradeIds = accumulatedVolumeFeeEntity.tradesIds;
+
+  while (accumulatedVolumeFeeEntity.tradesIds.length > 0) {
+    let firstEventId = accumulatedVolumeFeeEntity.tradesIds[0];
+    let oldestTrade = FuturesTrade.load(firstEventId);
+
+    // Check if OlderOrder is out of the 30d rolling window
+    if (oldestTrade && oldestTrade.timestamp < thirtyDaysAgo) {
+      const volume = oldestTrade.size.abs().times(oldestTrade.price).div(ETHER).abs();
+      accumulatedVolumeFeeEntity.volume = accumulatedVolumeFeeEntity.volume.minus(volume);
+      newTradeIds = newTradeIds.slice(1);
+      accumulatedVolumeFeeEntity.tradesIds = newTradeIds;
+    } else {
+      break;
+    }
+  }
+
+  newTradeIds.push(newTradeId);
+  accumulatedVolumeFeeEntity.tradesIds = newTradeIds;
+  accumulatedVolumeFeeEntity.volume = accumulatedVolumeFeeEntity.volume.plus(newTradeVolume);
+
+  const startOfDay = getStartOfDay(event.block.timestamp);
+
+  let dailyTradeEntity = DailyTrade.load(smartMarginAccount.id + '-' + startOfDay.toString());
+  if (!dailyTradeEntity) {
+    dailyTradeEntity = new DailyTrade(smartMarginAccount.id + '-' + startOfDay.toString());
+    dailyTradeEntity.account = smartMarginAccount.id;
+    dailyTradeEntity.timestamp = startOfDay;
+    dailyTradeEntity.tradesIds = [];
+    dailyTradeEntity.feesPaid = ZERO;
+  }
+
+  const dailyTradeIds = dailyTradeEntity.tradesIds;
+  dailyTradeIds.push(newTradeId);
+  dailyTradeEntity.thirtyDayVolume = accumulatedVolumeFeeEntity.volume;
+  dailyTradeEntity.tradesIds = dailyTradeIds;
+
+  dailyTradeEntity.save();
+  accumulatedVolumeFeeEntity.save();
 }
