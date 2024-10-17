@@ -17,6 +17,7 @@ import {
   PnlSnapshot,
   MarketPriceUpdate,
   PositionLiquidation,
+  PositionsOpen,
 } from '../generated/subgraphs/perps-v3/schema';
 import {
   AccountCreated,
@@ -28,6 +29,7 @@ import {
   CollateralModified as CollateralModifiedEvent,
   OrderCommitted as OrderCommittedEvent,
   InterestCharged as InterestChargedEvent,
+  AccountFlaggedForLiquidation as AccountFlaggedForLiquidationEvent,
 } from '../generated/subgraphs/perps-v3/PerpsV3/PerpsV3MarketProxy';
 import { BigInt, log, store } from '@graphprotocol/graph-ts';
 import {
@@ -102,6 +104,8 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
   liquidation.notionalAmount = estiamtedNotionalSize;
   liquidation.estimatedPrice = market.lastPrice;
   liquidation.timestamp = event.block.timestamp;
+  liquidation.txHash = event.transaction.hash.toHex();
+  liquidation.liquidationPnl = ZERO;
   liquidation.save();
 
   let statId = event.params.accountId.toString() + '-' + account.owner.toHexString();
@@ -124,6 +128,10 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
         statEntity.liquidations = statEntity.liquidations.plus(BigInt.fromI32(1));
         statEntity.save();
       }
+
+      const updatedPnl = calculatePnlOnLiquidation(positionEntity, event, statEntity);
+      liquidation.liquidationPnl = updatedPnl;
+      liquidation.save();
     }
   }
 }
@@ -231,13 +239,15 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     positionEntity.totalReducedNotional = ZERO;
     positionEntity.interestCharged = ZERO;
 
-    updateAggregateStatEntities(
-      positionEntity.marketId,
-      positionEntity.marketSymbol,
-      event.block.timestamp,
-      ONE,
-      volume,
-    );
+    if (event.params.trackingCode.toString() == 'KWENTA') {
+      updateAggregateStatEntities(
+        positionEntity.marketId,
+        positionEntity.marketSymbol,
+        event.block.timestamp,
+        ONE,
+        volume,
+      );
+    }
 
     statEntity.feesPaid = statEntity.feesPaid.plus(event.params.totalFees);
     statEntity.totalTrades = statEntity.totalTrades.plus(BigInt.fromI32(1));
@@ -246,6 +256,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     positionEntity.save();
     order.position = positionEntity.id;
     statEntity.save();
+    addToPositionsOpen(positionEntity);
   } else {
     const tradeNotionalValue = event.params.sizeDelta.abs().times(event.params.fillPrice);
 
@@ -261,6 +272,7 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
       openPositionEntity.save();
 
       calculatePnl(positionEntity, order, event, statEntity);
+      removeFromPositionsOpen(positionEntity);
     } else {
       if (
         (positionEntity.size.lt(ZERO) && event.params.newSize.gt(ZERO)) ||
@@ -274,6 +286,19 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
         // If ths positions size is increasing then recalculate the average entry price
         const existingNotionalValue = positionEntity.size.abs().times(positionEntity.avgEntryPrice);
         positionEntity.avgEntryPrice = existingNotionalValue.plus(tradeNotionalValue).div(event.params.newSize.abs());
+
+        let interestCharged = order.interestCharged !== null ? order.interestCharged! : ZERO;
+
+        positionEntity.interestCharged = positionEntity.interestCharged.plus(interestCharged);
+        positionEntity.pnlWithFeesPaid = positionEntity.realizedPnl
+          .minus(positionEntity.feesPaid)
+          .plus(positionEntity.netFunding)
+          .plus(interestCharged);
+
+        statEntity.pnlWithFeesPaid = statEntity.pnlWithFeesPaid
+          .minus(order.totalFees)
+          .plus(order.accruedFunding)
+          .plus(interestCharged);
       } else {
         // If decreasing calc the pnl
         calculatePnl(positionEntity, order, event, statEntity);
@@ -288,13 +313,15 @@ export function handleOrderSettled(event: OrderSettledEvent): void {
     order.position = positionEntity.id;
     positionEntity.size = positionEntity.size.plus(event.params.sizeDelta);
 
-    updateAggregateStatEntities(
-      positionEntity.marketId,
-      positionEntity.marketSymbol,
-      event.block.timestamp,
-      ONE,
-      volume,
-    );
+    if (event.params.trackingCode.toString() == 'KWENTA') {
+      updateAggregateStatEntities(
+        positionEntity.marketId,
+        positionEntity.marketSymbol,
+        event.block.timestamp,
+        ONE,
+        volume,
+      );
+    }
 
     statEntity.feesPaid = statEntity.feesPaid.plus(event.params.totalFees).minus(event.params.accruedFunding);
 
@@ -502,6 +529,45 @@ export function handleInterestCharged(event: InterestChargedEvent): void {
   }
 }
 
+export function handleAccountFlaggedForLiquidation(event: AccountFlaggedForLiquidationEvent): void {
+  let positionsOpenEntity = PositionsOpen.load(event.params.accountId.toString());
+
+  if (positionsOpenEntity && positionsOpenEntity.openPositions > 0) {
+    positionsOpenEntity.marginPerPosition = event.params.availableMargin.div(
+      BigInt.fromI32(positionsOpenEntity.openPositions),
+    );
+
+    positionsOpenEntity.txHash = event.transaction.hash.toHex();
+    positionsOpenEntity.save();
+  }
+}
+
+function addToPositionsOpen(position: PerpsV3Position): void {
+  let positionsOpenEntity = PositionsOpen.load(position.accountId.toString());
+  if (!positionsOpenEntity) {
+    positionsOpenEntity = new PositionsOpen(position.accountId.toString());
+    positionsOpenEntity.marginPerPosition = ZERO;
+    positionsOpenEntity.openPositions = 0;
+  }
+
+  positionsOpenEntity.openPositions = positionsOpenEntity.openPositions + 1;
+  positionsOpenEntity.save();
+}
+
+function removeFromPositionsOpen(position: PerpsV3Position): void {
+  let positionsOpenEntity = PositionsOpen.load(position.accountId.toString());
+  if (!positionsOpenEntity) {
+    positionsOpenEntity = new PositionsOpen(position.accountId.toString());
+    positionsOpenEntity.marginPerPosition = ZERO;
+    positionsOpenEntity.openPositions = 0;
+  }
+
+  if (positionsOpenEntity.openPositions > 0) {
+    positionsOpenEntity.openPositions = positionsOpenEntity.openPositions - 1;
+    positionsOpenEntity.save();
+  }
+}
+
 function calculatePnl(
   position: PerpsV3Position,
   order: OrderSettled,
@@ -540,6 +606,50 @@ function calculatePnl(
   order.save();
   position.save();
   statEntity.save();
+}
+
+function calculatePnlOnLiquidation(
+  position: PerpsV3Position,
+  event: PositionLiquidatedEvent,
+  statEntity: PerpsV3Stat | null,
+): BigInt {
+  let market = PerpsV3Market.load(event.params.marketId.toString());
+  const positionsOpenEntity = PositionsOpen.load(position.accountId.toString());
+
+  if (!market || !positionsOpenEntity) {
+    return ZERO;
+  }
+
+  let pnl = market.lastPrice
+    .minus(position.avgEntryPrice)
+    .times(event.params.amountLiquidated)
+    .abs()
+    .times(BigInt.fromI32(-1))
+    .div(ETHER)
+    .minus(positionsOpenEntity.marginPerPosition);
+
+  position.realizedPnl = position.realizedPnl.plus(pnl);
+  position.pnlWithFeesPaid = position.realizedPnl.minus(position.feesPaid).plus(position.netFunding);
+
+  if (statEntity) {
+    statEntity.pnl = statEntity.pnl.plus(pnl);
+    statEntity.pnlWithFeesPaid = statEntity.pnlWithFeesPaid.plus(pnl);
+    let pnlSnapshot = new PnlSnapshot(
+      position.id + '-' + event.block.timestamp.toString() + '-' + event.transaction.hash.toHex(),
+    );
+    pnlSnapshot.pnl = statEntity.pnl;
+    pnlSnapshot.accountId = position.accountId;
+    pnlSnapshot.timestamp = event.block.timestamp;
+    pnlSnapshot.save();
+    statEntity.save();
+  }
+
+  positionsOpenEntity.openPositions = 0;
+
+  positionsOpenEntity.save();
+  position.save();
+
+  return pnl;
 }
 
 function getOrCreateMarketAggregateStats(

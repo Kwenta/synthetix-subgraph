@@ -36,7 +36,15 @@ program
 
 program.action(async () => {
   const MAIN_SUBGRAPH_EXCLUDE = [];
-  const NETWORK_CHOICES = ['mainnet', 'goerli', 'optimism', 'optimism-sepolia', 'base', 'base-sepolia'];
+  const NETWORK_CHOICES = [
+    'mainnet',
+    'optimism',
+    'optimism-sepolia',
+    'base',
+    'base-sepolia',
+    'arbitrum-one',
+    'arbitrum-sepolia',
+  ];
   const SUBGRAPH_CHOICES = await fs.readdirSync(path.join(__dirname, '../subgraphs')).reduce((acc, val) => {
     if (val.endsWith('.js') && val !== 'main.js') {
       acc.push(val.slice(0, -3));
@@ -137,9 +145,13 @@ program.action(async () => {
   console.log(cyan('Running The Graph’s codegen...'));
   for (let i = 0; i < SUBGRAPH_CHOICES.length; i++) {
     const subgraph = SUBGRAPH_CHOICES[i];
-    await exec(
-      `NETWORK=mainnet SUBGRAPH=${subgraph} ./node_modules/.bin/graph codegen ./subgraphs/${subgraph}.js -o ./generated/subgraphs/${subgraph}`,
-    );
+    try {
+      await exec(
+        `NETWORK=${settings.network} SUBGRAPH=${subgraph} ./node_modules/.bin/graph codegen ./subgraphs/${subgraph}.js -o ./generated/subgraphs/${subgraph}`,
+      );
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   console.log(cyan('Creating contracts...'));
