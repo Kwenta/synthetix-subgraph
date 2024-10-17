@@ -161,6 +161,11 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
 
   // if there is an existing position, add funding accrued
   let fundingAccrued = ZERO;
+
+  let pastTradeFundingEntity = FundingRateUpdate.load(
+    futuresMarketAddress.toHex() + '-' + positionEntity.lastTradeFundingIndex.toString(),
+  );
+
   if (positionEntity.fundingIndex != event.params.fundingIndex) {
     // add accrued funding to position
     // funding is accrued from the last `fundingIndex` to the current `fundingIndex`
@@ -380,25 +385,36 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       tradeEntity.abstractAccount = sendingAccount;
       tradeEntity.accountType = accountType;
 
-      // recalculate pnl to ensure a 100% position loss
-      // this calculation is required since the liquidation price could result in pnl slightly above/below 100%
-      const newPositionPnlWithFeesPaid = positionEntity.initialMargin
-        .plus(positionEntity.netTransfers)
-        .times(BigInt.fromI32(-1));
-      const newPositionPnl = newPositionPnlWithFeesPaid.plus(positionEntity.feesPaid).minus(positionEntity.netFunding);
-      const newTradePnl = newPositionPnl.minus(positionEntity.pnl);
+      const liquidationPnl = event.params.lastPrice
+        .minus(positionEntity.avgEntryPrice)
+        .times(positionEntity.size)
+        .div(ETHER);
 
+      const newPositionPnl = liquidationPnl.plus(positionEntity.pnl);
+
+      let fundingAccrued = ZERO;
+
+      let currentFundingEntity = FundingRateUpdate.load(
+        futuresMarketAddress.toHex() + '-' + event.params.fundingIndex.toString(),
+      );
+
+      if (currentFundingEntity && pastTradeFundingEntity) {
+        fundingAccrued = currentFundingEntity.funding
+          .minus(pastTradeFundingEntity.funding)
+          .times(positionEntity.size)
+          .div(ETHER);
+      }
       // temporarily set the pnl to the difference in the position pnl
       // we will add liquidation fees during the PositionLiquidated handler
       tradeEntity.margin = ZERO;
-      tradeEntity.size = ZERO;
+      tradeEntity.size = positionEntity.size;
       tradeEntity.asset = positionEntity.asset;
       tradeEntity.marketKey = positionEntity.marketKey;
       tradeEntity.price = event.params.lastPrice;
       tradeEntity.positionId = positionId;
       tradeEntity.positionSize = ZERO;
       tradeEntity.positionClosed = true;
-      tradeEntity.pnl = newTradePnl;
+      tradeEntity.pnl = liquidationPnl;
       tradeEntity.feesPaid = feesPaid;
       tradeEntity.fundingAccrued = fundingAccrued;
       tradeEntity.keeperFeesPaid = ZERO;
@@ -412,10 +428,9 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
 
       // set position values
       positionEntity.pnl = newPositionPnl;
-      positionEntity.pnlWithFeesPaid = newPositionPnlWithFeesPaid;
 
       // set stat values
-      statEntity.pnl = statEntity.pnl.plus(newTradePnl);
+      statEntity.pnl = statEntity.pnl.plus(liquidationPnl);
     } else if (marginTransferEntity) {
       // if margin transfer exists, add it to net transfers
       positionEntity.netTransfers = positionEntity.netTransfers.plus(marginTransferEntity.size);
