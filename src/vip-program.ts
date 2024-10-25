@@ -41,9 +41,7 @@ export function handleFeeReimbursed(event: FeeReimbursedEvent): void {
     accumulatedVolumeFeeEntity.save();
   }
 
-  const feeReimbursedEntity = new FeeReimbursed(
-    smartMarginAccount.owner.toHex() + '-' + event.transaction.hash.toHex(),
-  );
+  const feeReimbursedEntity = new FeeReimbursed(event.transaction.hash.toHex());
 
   feeReimbursedEntity.account = event.params.account;
   feeReimbursedEntity.feeRebate = event.params.feeRebate;
@@ -55,7 +53,7 @@ export function handleFeeReimbursed(event: FeeReimbursedEvent): void {
 }
 
 export function handleFeeRebateClaimed(event: FeeRebateClaimedEvent): void {
-  const feeReimbursedEntity = FeeReimbursed.load(event.params.account.toHex() + '-' + event.transaction.hash.toHex());
+  const feeReimbursedEntity = FeeReimbursed.load(event.transaction.hash.toHex());
   if (feeReimbursedEntity) {
     feeReimbursedEntity.rebateTokenPrice = event.params.price;
     feeReimbursedEntity.save();
