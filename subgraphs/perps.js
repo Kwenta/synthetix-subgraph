@@ -181,6 +181,10 @@ const perpsMarketTemplate = {
         event: 'PerpsTracking(indexed bytes32,bytes32,bytes32,int256,uint256)',
         handler: 'handlePerpsTracking',
       },
+      {
+        event: 'PositionFlagged(uint256,address,address,uint256,uint256)',
+        handler: 'handlePositionFlagged',
+      },
     ],
   },
 };

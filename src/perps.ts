@@ -18,6 +18,7 @@ import {
   AccumulatedVolumeFee,
   OrderFlowFeeImposed,
   DailyTrade,
+  FlaggedPosition,
 } from '../generated/subgraphs/perps/schema';
 import {
   MarketAdded as MarketAddedEvent,
@@ -35,17 +36,15 @@ import {
   FundingRecomputed as FundingRecomputedEvent,
   PositionModified1 as PositionModifiedV2Event,
   PositionLiquidated1 as PositionLiquidatedV2Event,
+  PositionFlagged as PositionFlaggedEvent,
 } from '../generated/subgraphs/perps/templates/PerpsMarket/PerpsV2MarketProxyable';
 import { PerpsMarket } from '../generated/subgraphs/perps/templates';
 import {
-  computeVipFeeRebate,
   DAY_SECONDS,
   ETHER,
   FUNDING_RATE_PERIOD_TYPES,
   FUNDING_RATE_PERIODS,
   getStartOfDay,
-  getVipTier,
-  getVipTierMinVolume,
   ONE,
   ONE_HOUR_SECONDS,
   SECONDS_IN_30_DAYS,
@@ -385,10 +384,14 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       tradeEntity.abstractAccount = sendingAccount;
       tradeEntity.accountType = accountType;
 
-      const liquidationPnl = event.params.lastPrice
-        .minus(positionEntity.avgEntryPrice)
-        .times(positionEntity.size)
-        .div(ETHER);
+      let price = positionEntity.lastPrice;
+
+      const flaggedPositionEntity = FlaggedPosition.load(event.params.id.toHex());
+      if (flaggedPositionEntity) {
+        price = flaggedPositionEntity.price;
+      }
+
+      const liquidationPnl = price.minus(positionEntity.avgEntryPrice).times(positionEntity.size).div(ETHER);
 
       const newPositionPnl = liquidationPnl.plus(positionEntity.pnl);
 
@@ -410,7 +413,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       tradeEntity.size = positionEntity.size;
       tradeEntity.asset = positionEntity.asset;
       tradeEntity.marketKey = positionEntity.marketKey;
-      tradeEntity.price = event.params.lastPrice;
+      tradeEntity.price = price;
       tradeEntity.positionId = positionId;
       tradeEntity.positionSize = ZERO;
       tradeEntity.positionClosed = true;
@@ -464,6 +467,17 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
   positionEntity.save();
   statEntity.save();
   cumulativeEntity.save();
+}
+
+export function handlePositionFlagged(event: PositionFlaggedEvent): void {
+  // handler for the PositionFlagged event
+  const positionFlaggedEntity = new FlaggedPosition(event.params.id.toHex());
+  positionFlaggedEntity.positionId = event.params.id.toHex();
+  positionFlaggedEntity.account = event.params.account;
+  positionFlaggedEntity.timestamp = event.block.timestamp;
+  positionFlaggedEntity.price = event.params.price;
+  positionFlaggedEntity.txHash = event.transaction.hash.toHex();
+  positionFlaggedEntity.save();
 }
 
 export function handlePerpsTracking(event: PerpsTrackingEvent): void {

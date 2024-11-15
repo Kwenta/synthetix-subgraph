@@ -318,3 +318,12 @@ type FeeRebateAccumulated @entity {
   startBlockNumber: BigInt!
   endBlockNumber: BigInt!
 }
+
+type FlaggedPosition @entity {
+  id: ID!
+  positionId: ID!
+  account: Bytes!
+  timestamp: BigInt!
+  price: BigInt!
+  txHash: String!
+}
