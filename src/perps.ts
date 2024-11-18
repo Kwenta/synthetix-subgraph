@@ -384,14 +384,18 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       tradeEntity.abstractAccount = sendingAccount;
       tradeEntity.accountType = accountType;
 
-      let price = positionEntity.lastPrice;
+      let price = event.params.lastPrice;
 
       const flaggedPositionEntity = FlaggedPosition.load(event.params.id.toHex());
       if (flaggedPositionEntity) {
         price = flaggedPositionEntity.price;
+        store.remove('FlaggedPosition', event.params.id.toHex());
       }
 
-      const liquidationPnl = price.minus(positionEntity.avgEntryPrice).times(positionEntity.size).div(ETHER);
+      const liquidationPnl = event.params.lastPrice
+        .minus(positionEntity.avgEntryPrice)
+        .times(positionEntity.size)
+        .div(ETHER);
 
       const newPositionPnl = liquidationPnl.plus(positionEntity.pnl);
 
