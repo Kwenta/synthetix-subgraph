@@ -218,6 +218,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     tradeEntity.asset = ZERO_ADDRESS;
     tradeEntity.marketKey = ZERO_ADDRESS;
     tradeEntity.price = event.params.lastPrice;
+    tradeEntity.flaggedPrice = ZERO;
     tradeEntity.positionId = positionId;
     tradeEntity.positionSize = event.params.size;
     tradeEntity.pnl = ZERO;
@@ -384,11 +385,11 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       tradeEntity.abstractAccount = sendingAccount;
       tradeEntity.accountType = accountType;
 
-      let price = event.params.lastPrice;
+      let flaggedPrice = event.params.lastPrice;
 
       const flaggedPositionEntity = FlaggedPosition.load(event.params.id.toHex());
       if (flaggedPositionEntity) {
-        price = flaggedPositionEntity.price;
+        flaggedPrice = flaggedPositionEntity.price;
         store.remove('FlaggedPosition', event.params.id.toHex());
       }
 
@@ -417,7 +418,8 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       tradeEntity.size = positionEntity.size;
       tradeEntity.asset = positionEntity.asset;
       tradeEntity.marketKey = positionEntity.marketKey;
-      tradeEntity.price = price;
+      tradeEntity.price = event.params.lastPrice;
+      tradeEntity.flaggedPrice = flaggedPrice;
       tradeEntity.positionId = positionId;
       tradeEntity.positionSize = ZERO;
       tradeEntity.positionClosed = true;
