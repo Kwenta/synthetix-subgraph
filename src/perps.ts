@@ -218,7 +218,6 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
     tradeEntity.asset = ZERO_ADDRESS;
     tradeEntity.marketKey = ZERO_ADDRESS;
     tradeEntity.price = event.params.lastPrice;
-    tradeEntity.flaggedPrice = ZERO;
     tradeEntity.positionId = positionId;
     tradeEntity.positionSize = event.params.size;
     tradeEntity.pnl = ZERO;
@@ -393,10 +392,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
         store.remove('FlaggedPosition', event.params.id.toHex());
       }
 
-      const liquidationPnl = event.params.lastPrice
-        .minus(positionEntity.avgEntryPrice)
-        .times(positionEntity.size)
-        .div(ETHER);
+      const liquidationPnl = flaggedPrice.minus(positionEntity.avgEntryPrice).times(positionEntity.size).div(ETHER);
 
       const newPositionPnl = liquidationPnl.plus(positionEntity.pnl);
 
@@ -418,8 +414,7 @@ export function handlePositionModified(event: PositionModifiedEvent): void {
       tradeEntity.size = positionEntity.size;
       tradeEntity.asset = positionEntity.asset;
       tradeEntity.marketKey = positionEntity.marketKey;
-      tradeEntity.price = event.params.lastPrice;
-      tradeEntity.flaggedPrice = flaggedPrice;
+      tradeEntity.price = flaggedPrice;
       tradeEntity.positionId = positionId;
       tradeEntity.positionSize = ZERO;
       tradeEntity.positionClosed = true;
@@ -532,21 +527,19 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
   let statEntity = FuturesStat.load(account.toHex());
 
   if (positionEntity) {
+    const pnlWithLastPrice = event.params.price.minus(positionEntity.avgEntryPrice).times(event.params.size).div(ETHER);
+    const adjustedTotalFee = event.params.fee.minus(pnlWithLastPrice.minus(positionEntity.pnl));
     // update position values
     positionEntity.isLiquidated = true;
     positionEntity.isOpen = false;
     positionEntity.closeTimestamp = event.block.timestamp;
-    positionEntity.feesPaid = positionEntity.feesPaid.plus(event.params.fee);
-
-    // adjust pnl for the additional fees paid
-    positionEntity.pnl = positionEntity.pnl.plus(event.params.fee);
+    positionEntity.feesPaid = positionEntity.feesPaid.plus(adjustedTotalFee);
     positionEntity.pnlWithFeesPaid = positionEntity.pnl.minus(positionEntity.feesPaid).plus(positionEntity.netFunding);
 
     // update stats entity
     if (statEntity) {
       statEntity.liquidations = statEntity.liquidations.plus(BigInt.fromI32(1));
-      statEntity.feesPaid = statEntity.feesPaid.plus(event.params.fee);
-      statEntity.pnl = statEntity.pnl.plus(event.params.fee);
+      statEntity.feesPaid = statEntity.feesPaid.plus(adjustedTotalFee);
       statEntity.pnlWithFeesPaid = statEntity.pnl.minus(statEntity.feesPaid);
       statEntity.save();
     }
@@ -555,8 +548,7 @@ export function handlePositionLiquidated(event: PositionLiquidatedEvent): void {
     if (tradeEntity) {
       tradeEntity.size = event.params.size.times(BigInt.fromI32(-1));
       tradeEntity.positionSize = ZERO;
-      tradeEntity.feesPaid = tradeEntity.feesPaid.plus(event.params.fee);
-      tradeEntity.pnl = tradeEntity.pnl.plus(event.params.fee);
+      tradeEntity.feesPaid = tradeEntity.feesPaid.plus(adjustedTotalFee);
       tradeEntity.save();
       positionEntity.liquidation = tradeEntity.id;
     }
@@ -598,21 +590,21 @@ export function handlePositionLiquidatedV2(event: PositionLiquidatedV2Event): vo
   // calculate total fee
   let totalFee = event.params.flaggerFee.plus(event.params.liquidatorFee).plus(event.params.stakersFee);
   if (positionEntity) {
+    const pnlWithLastPrice = event.params.price.minus(positionEntity.avgEntryPrice).times(event.params.size).div(ETHER);
+    const adjustedTotalFee = totalFee.minus(pnlWithLastPrice.minus(positionEntity.pnl));
     // update position
     positionEntity.isLiquidated = true;
     positionEntity.isOpen = false;
     positionEntity.closeTimestamp = event.block.timestamp;
-    positionEntity.feesPaid = positionEntity.feesPaid.plus(totalFee);
+    positionEntity.feesPaid = positionEntity.feesPaid.plus(adjustedTotalFee);
 
     // adjust pnl for the additional fee paid
-    positionEntity.pnl = positionEntity.pnl.plus(totalFee);
     positionEntity.pnlWithFeesPaid = positionEntity.pnl.minus(positionEntity.feesPaid).plus(positionEntity.netFunding);
 
     // update stats entity
     if (statEntity) {
       statEntity.liquidations = statEntity.liquidations.plus(BigInt.fromI32(1));
-      statEntity.feesPaid = statEntity.feesPaid.plus(totalFee);
-      statEntity.pnl = statEntity.pnl.plus(totalFee);
+      statEntity.feesPaid = statEntity.feesPaid.plus(adjustedTotalFee);
       statEntity.pnlWithFeesPaid = statEntity.pnl.minus(statEntity.feesPaid);
       statEntity.save();
     }
@@ -621,8 +613,7 @@ export function handlePositionLiquidatedV2(event: PositionLiquidatedV2Event): vo
     if (tradeEntity) {
       tradeEntity.size = event.params.size.times(BigInt.fromI32(-1));
       tradeEntity.positionSize = ZERO;
-      tradeEntity.feesPaid = tradeEntity.feesPaid.plus(totalFee);
-      tradeEntity.pnl = tradeEntity.pnl.plus(totalFee);
+      tradeEntity.feesPaid = tradeEntity.feesPaid.plus(adjustedTotalFee);
       tradeEntity.save();
       positionEntity.liquidation = tradeEntity.id;
     }

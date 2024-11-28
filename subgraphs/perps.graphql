@@ -16,7 +16,6 @@ type FuturesTrade @entity {
   asset: Bytes!
   marketKey: Bytes!
   price: BigInt!
-  flaggedPrice: BigInt!
   positionId: ID!
   positionSize: BigInt!
   positionClosed: Boolean!
